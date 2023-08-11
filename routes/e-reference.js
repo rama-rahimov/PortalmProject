@@ -3,20 +3,15 @@ const axios = require("axios") ;
 const querystring = require("querystring") ;
 const _ = require("lodash") ;
 const fs = require("fs") ;
-/*'crypto-js/enc-base64.js'; nado eto ispravit */
-
 const hmacSHA512 = require('crypto-js/hmac-sha512.js') ;
 const Base64 = require('crypto-js/enc-base64.js') ;
-
 const { querySync } = require("../middlewares/db.js") ;
 const { authenticate } = require("../middlewares/authenticate.js") ;
 const readyDoc = require("../middlewares/edoc.js") ;
 const db = require('../models');
 require('dotenv').config() ;
-
 const soap = require('soap');
 const { Op, Sequelize } = require("sequelize") ;
-
 const router = express.Router();
 
 /*
@@ -167,25 +162,21 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
     const { document_purpose, edu_level, direction, entranceYear, readOnly, id } = req.body;
     let check_sql = '';
     let check_sql_array = [];  
-    const hmm = await  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, db.sequelize.where(sequelize.fn("DATE_ADD", "update_date" + `INTERVAL 30 DAY`) > db.sequelize.fn("NOW")), {status:0}, {id: id ? {[Op.ne]:id} : ''}]}}) ;  
-        if(hmm){
-        return res.json(hmm);
-    }
    switch (Number(direction)) {                                                                                                                               
         case 1:
-            check_sql = await db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count'], [db.sequelize.fn("SUM", db.sequelize.literal(`CASE WHEN status < 2 THEN 1 ELSE 0 END`)), 'status_count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, {status:{[Op.ne]:2}},{[Op.or]:[db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL ${Number(document_purpose === 1 ? 30 : 3000)} DAY`)< db.sequelize.fn("NOW"))), {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count'], [db.sequelize.fn("SUM", db.sequelize.literal(`CASE WHEN status < 2 THEN 1 ELSE 0 END`)), 'status_count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, {status:{[Op.ne]:2}},{[Op.or]:[db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL ${Number(document_purpose === 1 ? 30 : 3000)} DAY`)< db.sequelize.fn("NOW"))), {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
             break;
         case 2:  
-            check_sql = await db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
+            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
             break;
         case 3:  
-            check_sql = await db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
             break;
         case 4:  
-            check_sql = await  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+            check_sql =   db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
             break;
         case 5:        
-            check_sql = await db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+            check_sql = db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
             break;
     }
 

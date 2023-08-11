@@ -33,7 +33,7 @@ router.get('/main/umumtehsil/:fin', authenticate, (req, res) => {
 
 router.get("/notifications/:id", authenticate, (req, res) => {
   const { id } = req.params;   
-  db.notifications.findAll({where:{service:"pts", fin:id}, order:[['id', 'DESC']]}).then(rows => res.json(rows));
+  db.notifications.findOne({where:{service:"pts", fin:id}, order:[['id', 'DESC']]}).then(rows => res.json(rows));
 });
 
 router.post("/pts_new_status_from_qebul", authenticate, (req, res) => {
