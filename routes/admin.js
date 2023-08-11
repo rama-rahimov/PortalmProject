@@ -119,7 +119,7 @@ router.post('/email_update', authenticate, (req, res) => {
   const { email, fin, description } = req.body;
   const isAdmin = Number(req.currentUser.role) === 10;
   if (isAdmin) { 
-    db.users.findAll({where:{fin}}).then((check) => {
+    db.users.findOne({where:{fin}}).then((check) => {
       if (check)   
         db.users.findOne({attributes:[[db.sequelize.fn('COUNT', Sequelize.col('id')), 'count']], where:{email}}).then(u => {
           if (u.count == 0) 

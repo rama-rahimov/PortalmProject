@@ -79,7 +79,8 @@ router.post('/payment', (req, res) => {
 
 const apply_session_appointment = (apply_id, user_id, fin, ATIS_ID, specialty_ATIS_ID, callback) => {
     db.informal_edu_session_specializations.findAll({attributes:['id', 'session_id', 'specialty_id', 
-    'specialty_status'], where:{specialty_status:1}, order:[['id', 'DESC']], include:[{model:db.informal_edu_specializations, required:true, attributes:[['id', 'spc_id'],
+    'specialty_status'], where:{specialty_status:1}, order:[['id', 'DESC']], include:[{model:db.informal_edu_specializations, required:true, 
+        attributes:[['id', 'spc_id'],
     'ATIS_ID', 'specialty_ATIS_ID', 'specialty_group_name', 'specialty'], where:{ATIS_ID, specialty_ATIS_ID}}]}).then(resData => {
         if (resData.length === 1) { 
             db.informal_edu_appeals.update({session_id:apply_id}, {where:{id:user_id, fin}}).then(resUpdateData => {
@@ -122,7 +123,7 @@ router.post('/save', authenticate, (req, res) => {
     const {step, dataForm, status} = req.body;
     const {fin} = dataForm;
     const user_id = req.currentUser.id; 
-    db.informal_edu_appeals.findAll({where:{user_id, fin}}).then(resApply => {
+    db.informal_edu_appeals.findOne({where:{user_id, fin}}).then(resApply => {
         if (resApply) {
 
             /**
@@ -298,7 +299,7 @@ router.post('/apply/module/save', authenticate, (req, res) => {
     const {moduleListSelected2, status} = req.body;
     const user_id = req.currentUser.id;
     const fin = req.currentUser.fin;
-    db.informal_edu_appeals.findAll({where:{user_id, fin, apply_status:5}}).then(resApply => {
+    db.informal_edu_appeals.findOne({where:{user_id, fin, apply_status:5}}).then(resApply => {
         if (resApply) {
             moduleListSelected2.flatMap(item => {
                 item.user_id = user_id ;
@@ -445,44 +446,22 @@ const knowledge_and_skill = (inf_education_apply_id, dataAll, callback) => {
 
 
 router.get('/specializations', authenticate, async (req, res) => { 
-    const iesd = await db.informal_edu_session_date.findAll({attributes:['id'] ,where:{apply_status:1}});
+    const iesd = await db.informal_edu_session_date.findAll({attributes:['id'] , where:{apply_status:1}});
     let iEsd = [] ;
     for (let i = 0; i < iesd.length; i++) {
         iEsd.push(iesd[i].id); 
     }
-    
-const concatIeds = await db.informal_edu_session_specializations.findAll({
-    include:[{model:db.informal_edu_specializations, required:false}]});
-
-    if(concatIeds){
-        return res.json(concatIeds) ;
-    }
-
-    // Burda baglanti ya duzgun deyil yada bashqa bir problem var , yenede baxmaq lazimdir
-
-    db.informal_edu_session_specializations.findAll({attributes:['id', 'session_id', 'specialty_id', [Sequelize.fn("CONCAT", 
-    Sequelize.col("session_id"), "_", Sequelize.col("last_name"), " ",Sequelize.col("father_name")),
-     "full_name"]]});
-
-    querySync(`SELECT s_spec.id,s_spec.session_id,s_spec.specialty_id,
-             spec.id AS spc_id,spec.ATIS_ID,spec.sn,
-             spec.specialty_ATIS_ID, spec.specialty_group_name,spec.specialty,
-             spec.specialty as name,
-             CONCAT(s_spec.session_id,"_",spec.ATIS_ID,"_",spec.specialty_ATIS_ID,"_",spec.sn) as spc,s_spec.specialty_status
-             FROM informal_edu_session_specializations AS s_spec
-             JOIN informal_edu_specializations AS spec
-             ON s_spec.specialty_id=spec.id
-             WHERE s_spec.specialty_status=1 AND s_spec.type='specialty'
-             AND s_spec.session_id in (SELECT id FROM informal_edu_session_date WHERE apply_status=1)
-             GROUP BY spec.ATIS_ID ORDER BY s_spec.id DESC`).then(resData => {
-        if (resData.length) {
-            res.json(resData)
-        }else{
-            res.json([resData])
-        }
-    }).catch(error => {
-        res.json(error)
-    });
+   return  db.informal_edu_session_specializations.findAll({attributes:['id', 'session_id', 'specialty_id', 'specialty_status'],
+     where:{specialty_status:1, type:'specialty', session_id:iEsd}, order:[['id', 'DESC']],
+     include:[{model:db.informal_edu_specializations , required:true, 
+     attributes:[['id', 'spc_id'], 'ATIS_ID', 'sn', 'specialty_ATIS_ID', 'specialty_group_name', 'specialty',
+     ['specialty', 'name'], [Sequelize.fn("CONCAT", Sequelize.col("ATIS_ID"), "_", Sequelize.col("specialty_ATIS_ID"), "_", Sequelize.col("sn")), "spc"]], 
+     group:['ATIS_ID']}]}).then(result => {
+        res.json(result);
+     }).catch(err => {
+        res.json(err);
+        console.log(err);
+     });
 });
 
 /**

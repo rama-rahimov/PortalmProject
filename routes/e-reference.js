@@ -12,7 +12,7 @@ const { querySync } = require("../middlewares/db.js") ;
 const { authenticate } = require("../middlewares/authenticate.js") ;
 const readyDoc = require("../middlewares/edoc.js") ;
 const db = require('../models');
-const {} = require('dotenv/config') ;
+require('dotenv').config() ;
 
 const soap = require('soap');
 const { Op, Sequelize } = require("sequelize") ;
@@ -65,6 +65,8 @@ router.get('/test/:fin/:edu_level/:entranceYear/:direction', (req, res) => {
         }
     })
 });
+
+
 router.get('/statistika/:p', async (req, res) => {
     const { exclude } = req.query;
     const { p } = req.params;
@@ -419,7 +421,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
 
     if (id) {
                 
-        db.e_documents_apply.findAll({attributes:['id', 'user_id'], where:{id}}).then(e_reference_apply => {
+        db.e_documents_apply.findOne({attributes:['id', 'user_id'], where:{id}}).then(e_reference_apply => {
             if (e_reference_apply) {
                 if (Number(user_id) !== Number(e_reference_apply.user_id)) {
                     callback({ error: 'Invailid user_id' });
@@ -777,7 +779,7 @@ const programs = [
     { id: 20, name: '2019-2023-cü illər üçün Azərbaycan Respublikasında ali təhsil sisteminin beynəlxalq rəqabətliliyinin artırılması üzrə Dövlət Proqramı' }
 ]
 function createReferencePdf(id, callback) { 
-    db.e_documents_apply.findAll({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
         if (result) {
             const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
             sendRequest({
@@ -815,7 +817,7 @@ function createReferencePdf(id, callback) {
                             type: Number(result.direction)
                         }, (filename) => {
                             if (filename) {  
-                                db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
+                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
                                     var endDate = new Date();
                                     endDate.setDate(endDate.getDate() + 30);
                                     var end_date = Number(result.document_purpose) !== 1 ? endDate.toISOString().split('T')[0] : '2090-01-01';
@@ -864,7 +866,7 @@ function createReferencePdf(id, callback) {
 
 
 function createATISReferencePdf(id, callback) {
-    db.e_documents_apply.findAll({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
         if (result) {
             const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
             getAtisData({
@@ -902,7 +904,7 @@ function createATISReferencePdf(id, callback) {
                             type: Number(result.direction)
                         }, (filename) => {
                             if (filename) {  
-                                db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
+                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
                                     var endDate = new Date();
                                     endDate.setDate(endDate.getDate() + 30);
                                     var end_date = endDate.toISOString().split('T')[0];
@@ -952,7 +954,7 @@ function createATISReferencePdf(id, callback) {
 
 
 function createPTSReferencePdf(id, callback) {  
-    db.e_documents_apply.findAll({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
         if (result) {
             const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
             getPTSData({
@@ -986,7 +988,7 @@ function createPTSReferencePdf(id, callback) {
                             type: Number(result.direction)
                         }, (filename) => {
                             if (filename) {  
-                                db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
+                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
                                     var endDate = new Date();
                                     endDate.setDate(endDate.getDate() + 30);
                                     var end_date = endDate.toISOString().split('T')[0];
@@ -1036,7 +1038,7 @@ function createPTSReferencePdf(id, callback) {
 
 
 function createExamReferencePdf(id, callback) {
-    db.e_documents_apply.findAll({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
         if (result) {
             //console.log('start result', result);
             const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
@@ -1064,7 +1066,7 @@ function createExamReferencePdf(id, callback) {
                         }, (filename) => {
                             //console.log('start filename', filename);
                             if (filename) { 
-                                db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
+                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
                                     var endDate = new Date();
                                     endDate.setDate(endDate.getDate() + 30);
                                     var end_date = endDate.toISOString().split('T')[0];

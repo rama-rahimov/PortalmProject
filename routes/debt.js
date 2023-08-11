@@ -57,31 +57,6 @@ router.get('/payment/debt/:id', authenticate, (req, res) => {
 });
 
 
-router.get('/payment/debtt', authenticate, (req, res) => {
-            axios({
-                method: 'POST',
-                url: `https://jsonplaceholder.typicode.com/photos`,
-                data:{
-                        albumId: 1,
-                        id: 2,
-                        title: "reprehenderit est deserunt velit ipsam",
-                        url: "https://via.placeholder.com/600/771796",
-                        thumbnailUrl: "https://via.placeholder.com/150/771796"
-                }
-            }).then(post_result => {
-                res.json(post_result.data);
-            }).catch(e => {
-                if (e.response) {
-                    console.log(e.response.data);
-                } else {
-                    console.log(e);
-                }
-                if (Object.keys(e).length > 0)
-                    res.json({ error: 'api error' });
-            })
-});
-
-
 
 /**
  * @api {post} /debt/payment/sendPaymentChekScan payment send Payment Chek Scan
@@ -330,7 +305,7 @@ router.get('/invoices', authenticate, (req, res) => {
 
 router.get('/by_id/:id', authenticate, (req, res) => {
     const { id } = req.params; 
-    db.debt.findAll({where:{user_id:req.currentUser.id, id}}).then(apply => {
+    db.debt.findOne({where:{user_id:req.currentUser.id, id}}).then(apply => {
         res.json(apply || {});
     });
 });
@@ -410,7 +385,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
         sub_specialization, education_type, education_language,
         invoice, subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, RecoveryType } = dataForm;
     if (fin) {  
-        db.debt.findAll({attributes:['id', 'user_id'], where:{id}}).then(debt => {
+        db.debt.findOne({attributes:['id', 'user_id'], where:{id}}).then(debt => {
             if (debt) {
                 if (Number(user_id) !== Number(debt.user_id)) {
                     callback({ error: 'Invalid user_id' });

@@ -3,6 +3,7 @@ const https = require("https") ;
 const axios = require("axios") ;
 require('dotenv').config() ; 
 const {Sequelize, QueryTypes} = require('sequelize') ;
+const db = require('../models');
 
 const regex = /\'\'|\'null\'|\'Null\'|\'undefined\'/gi ;
 
@@ -59,7 +60,7 @@ const querySync = (query, credentials = {}) => {
     if(takeType === null || takeType === undefined){
       rows = await query ;
     }else {
-      rows = await sequelize.query(query, takeType) ;
+      rows = await db.sequelize.query(query, takeType) ;
     }
       if(!rows){
         return reject("Problem in querySync");

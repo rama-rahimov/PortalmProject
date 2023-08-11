@@ -56,7 +56,9 @@ const student_sms = {
         }
     ]
 }
+
 const router = express.Router();
+
 
 router.get('/secret_token/:type', (req, res) => {
     const { type } = req.params;
@@ -187,7 +189,7 @@ router.post('/mig', /*global_authenticate,*/(req, res) => {
                         });
                         credentials.vacancy_id = {[Op.ne]:vacancy_id} ;
                         
-                        nfin = await Appealed_vacancies.findAll({attributes:['id'], where:credentials});
+                        nfin = await db.appealed_vacancies.findAll({attributes:['id'], where:credentials});
 
                         for (const fin of JSON.parse(JSON.stringify(nfin))) { 
                             db.notifications.destroy({where:{service:"vacancy_appeals", fin:fin.id, title:5}}).then(() => {
@@ -261,8 +263,8 @@ router.post('/student_info', global_authenticate, (req, res) => {
 router.post('/student/apply', global_authenticate, (req, res) => {
     const { isDoctoral, globalId, status, message, file, paymentTypeId, entranceSpecialtyPaymentAmount } = req.body;
     if (req.currentGlobalUser.type == 'student_apply' && Number(status || "") > 0) {
-        const extra = {}; 
-        db.student_appeals.findAll({where:{id:globalId}, include:[{model: db.users, required:false, attributes:['phone', 'country_code', ['citizenshipId', 'cid']]}]}).then((check) => {
+        const extra = {} ; 
+        db.student_appeals.findOne({where:{id:globalId}, include:[{model: db.users, required:false, attributes:['phone', 'country_code', ['citizenshipId', 'cid']]}]}).then((check) => {
             if (check) {
                 const lang = Number(check.cid) === 1 ? 'az' : 'en';
                 if (Number(status) === 10 && Number(check.paymentTypeId) === 1) {
@@ -280,7 +282,7 @@ router.post('/student/apply', global_authenticate, (req, res) => {
                     }
                     db.student_appeals.update({ status, reject_files: file || "", reject_description: message || "", ...extra }, {where:{ id: globalId }}).then((applyId) => {
                         if (applyId.error) {
-                            res.status(401).json({ error: 'Məlumat dəyişdirilə bilmədi!', success: false });
+                            res.status(401).json({ error: 'Məlumat dəyişdirilə bilmədi!', success: false }) ;
                         } else {
                             db.notifications.create({ service: 'student_appeal', fin: globalId, title: status, description: message, extra_data: (file || "") }).then(() => {
                                 const message = (_.find(student_sms[lang], (s) => s.id === Number(status)) || {}).message;
@@ -313,7 +315,7 @@ router.post('/debt/changeStatus', global_authenticate, (req, res) => {
             extra.directed_enterprise = enterprice;
         }  
 
-        db.debt.findAll({where:{id:globalId}}).then((check) => {
+        db.debt.findOne({where:{id:globalId}}).then((check) => {
             if (check) { 
 
                 db.debt.update({ status, reject_files: file || "", reject_description: message || "", ...extra }, {where:{ id: globalId }}).then((applyId) => {
@@ -503,7 +505,7 @@ router.post("/pts_new_status_from_qebul", global_authenticate, (req, res) => {
 
 router.post('/change/applicant/status', global_authenticate, (req, res) => {
     const { applicant, status, reason } = req.body;  
-    db.course_appeals.findAll({where:{id:applicant.course_appeals_id}}).then(checkCourseAppeals => {
+    db.course_appeals.findOne({where:{id:applicant.course_appeals_id}}).then(checkCourseAppeals => {
         console.log({ checkCourseAppeals })
         if (checkCourseAppeals) {  
             db.notifications.destroy({where:{service:'course_appeals', fin:applicant.id, title:status}}).then((r) => {
@@ -661,6 +663,9 @@ router.get('/applicant/data/:user_id/:ap_id', global_authenticate, (req, res) =>
         })
     }
 });
+
+
+
 router.get('/apply/by/id/:id', global_authenticate, (req, res) => { 
 
     db.course_appeals.findAll({where:{id:req.params.id}}).then(apply => {

@@ -92,7 +92,7 @@ router.get('/send_sms', (req, res) => {
 router.post('/reference', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'reference') {
         const { transactionID, status, message } = req.body; 
-        db.e_documents_apply.findAll({where:{id:transactionID}}).then((check) => {
+        db.e_documents_apply.findOne({where:{id:transactionID}}).then((check) => {
             if (check) { 
                 db.e_documents_apply.update({ status }, { where:{ id: transactionID } }).then((applyId) => {
                     if (applyId.error) {

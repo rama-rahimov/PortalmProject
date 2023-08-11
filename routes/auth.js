@@ -181,7 +181,7 @@ router.post("/asan_login", (req, res) => {
 });
 
 const saveFinData = (fin, finData, calcack) => {  
-  db.fin_data.findAll({attributes:['fin'], where:{fin}}).then(check_fin => {
+  db.fin_data.findOne({attributes:['fin'], where:{fin}}).then(check_fin => {
     if (!check_fin) { 
       db.fin_data.create({ ...finData, fin }).then(fin_dat => {
         if (fin_dat.error) {

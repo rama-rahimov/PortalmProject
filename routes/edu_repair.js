@@ -261,7 +261,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
         number_of_order_freezing_edu, education_level, education_base, education_fees, education_duration, borncity,
         specialty_code, edu_direction, section, course, name_of_other_apartment, social_status, social_scan } = dataForm;
     if (id) { 
-        db.edu_repair_apply.findAll({attributes:['id', 'user_id'], where:{id}}).then(edu_repair_apply => {
+        db.edu_repair_apply.findOne({attributes:['id', 'user_id'], where:{id}}).then(edu_repair_apply => {
             if (edu_repair_apply) {
                 if (Number(user_id) !== Number(edu_repair_apply.user_id)) {
                     callback({ error: 'Invalid user id' });

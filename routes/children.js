@@ -197,7 +197,7 @@ router.post('/save', authenticate, (req, res) => {
                     } else {
                       if (Number(citizenshipId) > 2)
                         db.fin_data
-                          .findAll({ attributes: ['fin'], where: { fin } })
+                          .findOne({ attributes: ['fin'], where: { fin } })
                           .then((check_fin) => {
                             if (!check_fin) {
                               db.fin_data
