@@ -59,6 +59,12 @@ db.fin_data.belongsTo(db.users, {foreignKey:'fin'});
 db.children.hasOne(db.fin_data, {sourceKey: 'fin',foreignKey: { name: 'children_fin', field: 'children_fin' }});
 db.fin_data.belongsTo(db.children, {foreignKey:'children_fin'});
 
+db.student_appeals_private_data.hasMany(db.student_appeals_parent_data);
+db.student_appeals_parent_data.belongsTo(db.student_appeals_parent_data);
+
+db.student_appeals_parent_data.hasMany(db.student_appeals_common_data);
+db.student_appeals_common_data.belongsTo(db.student_appeals_parent_data);
+
 db.student_appeals.hasMany(db.student_appeals_private_data, {foreignKey: { field: 'student_appeal_id' }});
 db.student_appeals_private_data.belongsTo(db.student_appeals, {foreignKey:'student_appeal_id'});
 

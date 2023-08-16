@@ -160,14 +160,14 @@ tr:nth-child(even) {
 
 router.post('/getReferenceData', authenticate, async (req, res) => {
     const { document_purpose, edu_level, direction, entranceYear, readOnly, id } = req.body;
-    let check_sql = '';
+    let check_sql = '' ;
     let check_sql_array = [];  
    switch (Number(direction)) {                                                                                                                               
         case 1:
             check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count'], [db.sequelize.fn("SUM", db.sequelize.literal(`CASE WHEN status < 2 THEN 1 ELSE 0 END`)), 'status_count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, {status:{[Op.ne]:2}},{[Op.or]:[db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL ${Number(document_purpose === 1 ? 30 : 3000)} DAY`)< db.sequelize.fn("NOW"))), {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
             break;
         case 2:  
-            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
+            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
             break;
         case 3:  
             check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
@@ -179,6 +179,8 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
             check_sql = db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
             break;
     }
+   
+  
 
     check_sql.then(check => {
         if ((Number((check || {}).count) === 0 || readOnly) && (!id || check)) {
@@ -190,7 +192,7 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
                      PIN: '5HMC722'*/
                     StatusCode: document_purpose,
                     EducationLevelCode: edu_level,
-                    PIN: req.currentUser.fin
+                    PIN: req.currentUser.fin 
                 }, 'GetInfoByPIN', (r) => {
                     if ((((((r.result || {}).GetInfoByPINResult || {}).ResponseDetails || {}).ResponseDetail || [])[0] || {}).Name) {
                         const data = r.result.GetInfoByPINResult.ResponseDetails.ResponseDetail[0];

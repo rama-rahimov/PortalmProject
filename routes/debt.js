@@ -383,7 +383,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
         education_level, education_institution, education_base, admission_year,
         specialty, specialty_password, sub_specialty, specialization, citizenship,
         sub_specialization, education_type, education_language,
-        invoice, subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, RecoveryType } = dataForm;
+        invoice, subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, RecoveryType } = dataForm ;
     if (fin) {  
         db.debt.findOne({attributes:['id', 'user_id'], where:{id}}).then(debt => {
             if (debt) {

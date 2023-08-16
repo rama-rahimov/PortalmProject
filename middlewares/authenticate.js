@@ -77,7 +77,7 @@ const global_authenticate = (req, res, next) => {
       if (err || decoded.secret !== process.env.JWT_GLOBAL_SECRET2) {
         res.status(401).json({ errors: { message: "Non correct token" } });
       } else {
-        req.currentGlobalUser = decoded;
+        req.currentGlobalUser = decoded ;
         next();
       }
     });

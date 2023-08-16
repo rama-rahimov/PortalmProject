@@ -32,7 +32,7 @@ const router = express.Router();
 
 
 router.post('/', global_authenticate, (req, res) => {
-    const { edu_repair_id, status, reason, message, teaching_group, date_of_freezing_edu, number_of_order_freezing_edu, number, date, file } = req.body;
+    const { edu_repair_id, status, reason, message, teaching_group, date_of_freezing_edu, number_of_order_freezing_edu, number, date, file } = req.body ;
 
     if (date_of_freezing_edu && number_of_order_freezing_edu) {  
         db.edu_repair_apply.update({date_of_freezing_edu, number_of_order_freezing_edu}, {where:{id: edu_repair_id}}).then(() => { });
@@ -167,6 +167,8 @@ router.post('/get_user_restored_data', authenticate, (req, res) => {
  * { "specialty_code": "","edu_direction": "", "section": "", "country": "", "phone": "", "first_name": "", "last_name": "", "father_name": "", "birth_date": "", "address": "", "actual_address": "", "citizenship": "", "email": "", "is_address_current": "", "fin": "", "edu_institution": "", "name_of_other_enterprise": "", "apartment": "", "specialty": "", "name_of_other_specialty": "", "year_of_admission": "", "date_of_freezing_edu": "", "teaching_group": "", "reason_for_freezing_edu": "", "number_of_order_freezing_edu": "", "education_level": "", "education_base": "", "education_fees": "", "education_duration": "", "certificates": "" }
  * @apiSampleRequest off
  */
+
+//  Bunun ustunde mutleq ishlemek lazimdir
 
 router.post('/save', authenticate, (req, res) => {
 

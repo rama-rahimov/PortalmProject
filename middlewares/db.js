@@ -27,7 +27,7 @@ const query = async (query, callback, credentials = {}) => {
     takeType.replacements = credentials ;
   }
   try {
-    const rows = await sequelize.query(query, takeType);
+    const rows = await db.sequelize.query(query, takeType);
     callback(null, rows); 
   } catch (error) {
     callback(error, null);
@@ -127,7 +127,7 @@ const querySyncForMap = (query, credentials = {}) => {
     if(takeType === null || takeType === undefined){
       rows = await query ;
     }else {
-      rows = await sequelize.query(query, takeType) ;
+      rows = await db.sequelize.query(query, takeType) ;
     }
       if(!rows){
         return reject("Problem in querySyncForMap");

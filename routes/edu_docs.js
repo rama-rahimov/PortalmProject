@@ -15,7 +15,7 @@ const router = express.Router();
  */
 
 router.post("/list", authenticate, (req, res) => {
-    db.e_documents.findOne({where:{fin:req.currentUser.fin, end_date:{[Op.gt]: db.sequelize.fn('NOW')}}, order:[['id', 'DESC']]}).then(result => {
+    db.e_documents.findAll({where:{fin:req.currentUser.fin, end_date:{[Op.gt]: db.sequelize.fn('NOW')}}, order:[['id', 'DESC']]}).then(result => {
         res.json({ success: true, diploms: (result || []).map(r => ({ ...r, file_details: r.file_details ? JSON.parse(r.file_details) : {} })) });
     });
 });

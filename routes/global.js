@@ -63,12 +63,12 @@ router.get('/send_sms', (req, res) => {
                     if (!r.sent) {
                         console.log(r);
                     }
-                    console.log(count);
+                    console.log(count); 
                     count++;
                     resolve(true);
                 }, '994');
             }).then(() => { 
-                sms_temp_datas.update({ status: 1 }, {where:{ fin: n.fin }}).then(() => { });
+                db.sms_temp_datas.update({ status: 1 }, {where:{ fin: n.fin }}).then(() => { });
             });
         }
     })

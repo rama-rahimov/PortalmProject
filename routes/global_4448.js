@@ -6,7 +6,7 @@ const { smsSend } = require("../middlewares/sms") ;
 const { global_authenticate } = require("../middlewares/authenticate") ;
 const { createReferencePdf } = require('./e-reference') ;
 const _ = require("lodash") ;
-const { Op } = require("sequelize") ;
+const { Op, Sequelize } = require("sequelize") ;
 
 const student_sms = {
     az: [
@@ -75,13 +75,14 @@ router.get('/secret_token/:type', (req, res) => {
 
 
 router.post('/e_documents', global_authenticate, (req, res) => {
+
     if (req.currentGlobalUser.type == 'edugov') {
         const { docNo, brithDate } = req.body;  
         db.e_documents.findAll({where:{document_no:docNo}, include:[{model:db.fin_data, required:false, where:{birth_date:brithDate}}]}).then(result => {
-            res.json({
+            res.json({ /** Burdada sehf var amma umummiyetle ishleyir */
                 success: true, diploms: (result || []).map(r => {
                     delete r.id;
-                    // delete r.hash;
+                    // delete r.hash;  
                     return { ...r, file_details: JSON.parse(r.file_details) }
                 })
             });
@@ -94,7 +95,7 @@ router.post('/e_documents', global_authenticate, (req, res) => {
 router.post('/e_document/by_hash', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'edugov') {
         const { hash } = req.body; 
-        db.e_documents.findAll({where:{hash}}).then(result => {
+        db.e_documents.findOne({where:{hash}}).then(result => {
             if (result && result.id) {
                 delete result.id;
                 // delete result.hash;
@@ -246,8 +247,8 @@ router.post('/student_info', global_authenticate, (req, res) => {
         const param = id || fin;
         const qPrama = id ?  {id:id} : {fin:fin} ;  
 
-        db.student_appeals.findAll({attributes:[['id', 'apply_id']], include:[{model:db.student_appeals_private_data, required:false, include:[{model:db.student_appeals_parent_data, required:false, include:[{model:db.student_appeals_common_data, required:false}]}]}]}).then(apply => {
-            if (apply) {   
+        db.student_appeals.findOne({attributes:[['id', 'apply_id']], include:[{model:db.student_appeals_private_data, required:false, include:[{model:db.student_appeals_parent_data, required:false, include:[{model:db.student_appeals_common_data, required:false}]}]}]}).then(apply => {
+            if (apply) {    // burda apply.apply_id nese gorsedir amma ishlemir
                 db.student_appeals_other_docs.findAll({where:{student_appeal_id:apply.apply_id}}).then(other_docs => {
                     res.json({ ...apply, other_docs });
                 });
@@ -273,7 +274,7 @@ router.post('/student/apply', global_authenticate, (req, res) => {
                     if (isDoctoral && [3, 6].includes(Number(check.ReceptionLineId))) {
                         if (Number(status) === 10) {
                             extra.paymentTypeId = 2;
-                            extra.entranceSpecialtyPaymentAmount = entranceSpecialtyPaymentAmount;
+                            extra.entranceSpecialtyPaymentAmount = entranceSpecialtyPaymentAmount ;
                         } else if (Number(status) === 13) {
                             extra.paymentTypeId = 1;
                         } else if (Number(status) === 12) {
@@ -308,7 +309,7 @@ router.post('/student/apply', global_authenticate, (req, res) => {
 
 
 router.post('/debt/changeStatus', global_authenticate, (req, res) => {
-    const { enterprice, globalId, status, message, file } = req.body;
+    const { enterprice, globalId, status, message, file } = req.body  ;
     if (req.currentGlobalUser.type == 'student_apply' && Number(status || "") > 0) {
         const extra = {};
         if (enterprice) {
@@ -336,11 +337,11 @@ router.post('/debt/changeStatus', global_authenticate, (req, res) => {
     }
 });
 
-
+// appealed_out_of_schools da tendency_id ve status columnlari yoxtdur
 router.post('/out_of_schools/statusChange', global_authenticate, (req, res) => {
     const { global_id, status, message, tendency_id } = req.body;
     if (req.currentGlobalUser.type == 'out_of_schools') {  
-        db.appealed_out_of_schools.findAll({where:{appeals_out_of_school_id:global_id, tendency_id}}).then((check) => {
+        db.appealed_out_of_schools.findOne({where:{appeals_out_of_school_id:global_id/*, tendency_id*/}}).then((check) => {
             if (check) {
                 db.appealed_out_of_schools.update({status}, { where:{ id: check.id } }).then((applyId) => {
                     if (applyId.error) {
@@ -353,7 +354,7 @@ router.post('/out_of_schools/statusChange', global_authenticate, (req, res) => {
                             });
                         });
                     }
-                });
+                }); 
             } else {
                 res.status(401).json({ message: 'Müraciət tapılmadı!', success: false });
             }
@@ -366,7 +367,7 @@ router.post('/out_of_schools/statusChange', global_authenticate, (req, res) => {
 router.post('/reference', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'reference') {
         const { transactionID, status, message } = req.body;  
-        db.e_documents_apply.findAll({where:{id:transactionID}}).then((check) => {
+        db.e_documents_apply.findOne({where:{id:transactionID}}).then((check) => {
             if (check) { 
                 db.e_documents_apply.update({ status }, { where:{ id: transactionID } }).then((applyId) => {
                     if (applyId.error) {
@@ -451,7 +452,7 @@ router.post('/edu_repair', global_authenticate, (req, res) => {
     });
 
     res.json({ succes: true, message: 'Məlumat uğurla dəyişdirdi!' });
-})
+});
 
 router.post('/course', /* global_authenticate, */(req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -506,7 +507,7 @@ router.post("/pts_new_status_from_qebul", global_authenticate, (req, res) => {
 router.post('/change/applicant/status', global_authenticate, (req, res) => {
     const { applicant, status, reason } = req.body;  
     db.course_appeals.findOne({where:{id:applicant.course_appeals_id}}).then(checkCourseAppeals => {
-        console.log({ checkCourseAppeals })
+        console.log({ checkCourseAppeals });
         if (checkCourseAppeals) {  
             db.notifications.destroy({where:{service:'course_appeals', fin:applicant.id, title:status}}).then((r) => {
                 db.notifications.create({ service: 'course_appeals', fin: applicant.id, title: status, description: reason }).then((r2) => {
@@ -573,17 +574,19 @@ router.get('/opencourse/applications/', global_authenticate, async (req, res) =>
     }
     // order by id desc
 
-    db.course_appeals.findAll({attributes:[[Sequelize.fn("CONCAT", 
-    Sequelize.col("first_name"), " ", Sequelize.col("last_name"), " ",Sequelize.col("father_name")),
-     "full_name"], "country", "fin", "citizenship", "birth_date", "borncity", "address", "phone", "email",
-      "actual_address", "is_address_current",
-      "genderId", "position_type", "dq_point", "miq_point", "user_id",  "status", "step", "country_code", 
-      "militaryService", "social_status", "social_scan", "actual_region", "lang", "training_date", "training_about",
-       "training_about_text", "training_motivation", ["id", "course_appeals_id"]], where:likeCs, include:[{
-        model:Appealed_courses, required:true, where:like }]})
-        .then(data => {
-            res.json((data || []).map(d => ({ ...d, id: d.ap_id })));
-        });
+    db.course_appeals.findAll({attributes:[[db.sequelize.fn("CONCAT", 
+    Sequelize.col("first_name"), " ", Sequelize.col("last_name"), " ", 
+    Sequelize.col("father_name")), "full_name"], "country", "fin",  
+    "birth_date", "borncity", "address", "phone", "email", "citizenship",
+    "actual_address", "is_address_current","genderId", "position_type", 
+    "status", "step", "country_code", "dq_point", "miq_point", "user_id",  
+    "militaryService", "social_status", "social_scan", "actual_region", "lang", 
+    "training_date", "training_about", "training_about_text", "training_motivation",
+    ["id", "course_appeals_id"]], where:likeCs, include:[{
+    model:db.appealed_courses, required:true, where:like }]})
+    .then(data => {
+    res.json((data || []).map(d => ({ ...d, id: d.ap_id })));  // bu ishlemir amma sadece data qaytarsaq ishleyecek
+    });
 });
 
 router.get('/opencourse/applications/:id', global_authenticate, async (req, res, next) => {
@@ -640,8 +643,8 @@ router.get('/opencourse/applications/:id', global_authenticate, async (req, res,
        "training_about_text", "training_motivation", ["id", "course_appeals_id"]], where:likeCs, include:[{
         model:db.appealed_courses, required:true, where:like }]});
     sql.then(data => {
-        res.json((data || []).map(d => ({ ...d, id: d.ap_id })));
-    })
+        res.json((data || []).map(d => ({ ...d, id: d.ap_id })));   // bu ishlemir amma sadece data qaytarsaq ishleyecek
+    });
 });
 
 router.get('/applicant/data/:user_id/:ap_id', global_authenticate, (req, res) => {
@@ -660,7 +663,7 @@ router.get('/applicant/data/:user_id/:ap_id', global_authenticate, (req, res) =>
             message: "xeta",
             edu_data: [],
             contact_data: []
-        })
+        });
     }
 });
 
@@ -668,7 +671,7 @@ router.get('/applicant/data/:user_id/:ap_id', global_authenticate, (req, res) =>
 
 router.get('/apply/by/id/:id', global_authenticate, (req, res) => { 
 
-    db.course_appeals.findAll({where:{id:req.params.id}}).then(apply => {
+    db.course_appeals.findOne({where:{id:req.params.id}}).then(apply => {
         if (apply) { 
             db.educations_for_course.findAll({where:{course_appeals_id:apply.id}}).then(educations => {
                 db.appealed_courses.findAll({where:{course_appeals_id:apply.id}}).then(selectedCourses => {
