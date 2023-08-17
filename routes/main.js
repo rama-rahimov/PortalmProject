@@ -3,9 +3,6 @@ const axios = require('axios') ;
 const https = require('https') ;
 const querystring = require('querystring') ;
 const db = require('../models');
-const {
-  sequelize,
-} = require('../middlewares/db.js') ;
 const { service_left_bar } = require('../models/service_left_bar.js') ;
 const { material_base } = require('../models/material_base.js') ;
 const { authenticate } = require('../middlewares/authenticate.js') ;
@@ -103,7 +100,7 @@ router.post('/send_phone_for_verification', async (req, res) => {
     : `Confirmation password: ${code} Do not share!`;
 
   
-    db.users.findAll({ attributes: ['phone'], where: { phone, country_code } }).then((user) => {
+    db.users.findOne({ attributes: ['phone'], where: { phone, country_code } }).then((user) => {
     if (user) {
       res.json({
         err: !isEng
@@ -111,7 +108,7 @@ router.post('/send_phone_for_verification', async (req, res) => {
           : 'It is already registered with this number',
       });
     } else {
-        db.phone_verification.findAll({
+        db.phone_verification.findOne({
           attributes: [
             'phone',
             'country_code',
@@ -358,13 +355,14 @@ router.post('/phone_verification_code_foredit', (req, res) => {
 router.post('/user_phone_verification_code', (req, res) => {
   const { email, phone_verification_code } = req.body;
   const isEng = (req.headers.language || '') === 'en';
-  db.users.findAll({ where: { email } }).then((u) => {
+  db.users.findOne({ where: { email } }).then(u => {
+    
     if (u.phone)
-        db.phone_verification.findAll({
+        db.phone_verification.findOne({
           attributes: ['id', 'count', 'code'],
           where: {
-            phone,
-            country_code,
+            phone:u.phone,
+            country_code:u.country_code,
             number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
           },
         }).then((result) => {
