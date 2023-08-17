@@ -51,7 +51,7 @@ router.get('/check', (req, res) => {
         res.json(r)
     })
 });*/
-router.get('/send_sms', (req, res) => {  
+router.get('/send_sms', (req, res) => {   
 
     db.sms_temp_datas.findAll({where:{status:0}}).then(async (numbers) => {
         let count = 1;
@@ -143,7 +143,7 @@ router.post('/reference', global_authenticate, (req, res) => {
 
 router.post('/edu_repair', global_authenticate, (req, res) => {
     //if (req.currentGlobalUser.type == 'edu_repair') {
-    const { edu_repair_id, status, reason, message } = req.body;
+    const { edu_repair_id, status, reason, message, global_id } = req.body;
     db.edu_repair_apply.update({ status }, { where :{ id: edu_repair_id } }).then((applyId) => {
         if (applyId.error) {
             res.status(304).json({ succes: false, error: 'Məlumat dəyişdirilə bilmədi!' });
@@ -184,10 +184,10 @@ router.post('/course', /*global_authenticate,*/(req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
     res.setHeader('Access-Control-Allow-Credentials', true);
     //if (req.currentGlobalUser.name == 'rahman') {
-    const { user_id, course_appeals_id, course_id, status, slug, reasonMessage } = req.body;
-    //console.log(req.body);
-    let data;
-    let credentials;
+    const { user_id, course_appeals_id, course_id, status, slug, reasonMessage } = req.body ;
+    //console.log(req.body) ;
+    let data ;
+    let credentials ;
     if (slug == 'apply') {
         data = { status, reasonMessage };
         credentials = { user_id, course_appeals_id, course_id };
@@ -227,7 +227,7 @@ router.post('/e_documents', global_authenticate, (req, res) => {
         const { docNo, brithDate } = req.body; 
         db.e_documents.findAll({where:{document_no:docNo}, include:[{model:db.fin_data, required:false, where:{birth_date:brithDate}}]}).then(result => {
             res.json({
-                success: true, diploms: (result || []).map(r => {
+                success: true, diploms: (result || []).map(r => {  // sadece result qaytaranda normal ishleyir amma bu cur yox
                     delete r.id;
                     //delete r.hash;
                     return { ...r, file_details: JSON.parse(r.file_details) }
@@ -255,7 +255,7 @@ router.post('/e_documents', global_authenticate, (req, res) => {
 router.post('/e_document/by_hash', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'edugov') {
         const { hash } = req.body; 
-        db.e_documents.findAll({where:{hash}}).then(result => {
+        db.e_documents.findOne({where:{hash}}).then(result => {
             if (result && result.id) {
                 delete result.id;
                 // delete result.hash;
@@ -272,9 +272,9 @@ router.post('/e_document/by_hash', global_authenticate, (req, res) => {
 
 router.post('/tms/changeStatus', global_authenticate, (req, res) => {
     let { id, result, forIntegration, statusDescription, statusId, message, dublicateId } = req.body;
+    let status = 3;
     if (req.currentGlobalUser.type == 'tms' && Number(status || "") > 0) {
         // const extra = {};
-        let status = 0;
         switch (statusId) {
             case 1030: status = 1; statusDescription = 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.'; break;
             case 1031: status = 2; break;
@@ -287,7 +287,7 @@ router.post('/tms/changeStatus', global_authenticate, (req, res) => {
         if (status && forIntegration) {  
             db.notifications.destroy({where:{service:'support', fin:id, title:status}}).then(() => {
                 db.notifications.create({ service: 'support', fin: id, title: status, description: statusDescription, extra_data: result }).then(() => {
-                    support_apply.update((result ? { status, result } : { status }), {where: { tms_id: id } }).then(() => {
+                    db.support_apply.update((result ? { status, result } : { status }), {where: { tms_id: id } }).then(() => {
                         res.json({ succes: true });
                     });
                 });
@@ -301,12 +301,13 @@ router.post('/tms/changeStatus', global_authenticate, (req, res) => {
 });
 
 router.post('/tms/save', global_authenticate, (req, res) => {
+    let status = 4 ;
     if (req.currentGlobalUser.type == 'tms' && Number(status || "") > 0) {
         const { fin, files } = req.body;
         saveTmsApply(req.body, (result) => {
             if (result.id) { 
                 db.notifications.create({ service: 'support', fin: result.id, title: 1, description: 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.', extra_data: "" }).then(() => {
-                    db.support_files.destroy({where:{support_apply_id:result.id}}).then(() => {
+                    db.support_files.destroy({where:{support_apply_id:result.id}}).then((certificates) => {
                         if (certificates) {
                             files.flatMap(item => {
                                 item.support_apply_id = result.id ;
@@ -328,7 +329,7 @@ router.post('/tms/save', global_authenticate, (req, res) => {
     }
 });
 
-module.exports = router;
+
 
 function saveTmsApply(data, callback) {
     const { id, apply_type, education_type, contingent, child_citizenship, child_fin, child_utis_code,
@@ -354,3 +355,6 @@ function saveTmsApply(data, callback) {
         });
     }
 }
+
+
+module.exports = router ;

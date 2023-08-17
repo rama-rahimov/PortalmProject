@@ -59,6 +59,15 @@ db.fin_data.belongsTo(db.users, {foreignKey:'fin'});
 db.children.hasOne(db.fin_data, {sourceKey: 'fin',foreignKey: { name: 'children_fin', field: 'children_fin' }});
 db.fin_data.belongsTo(db.children, {foreignKey:'children_fin'});
 
+db.informal_edu_module_documents.hasMany(db.informal_edu_specialty_modules);
+db.informal_edu_specialty_modules.belongsTo(db.informal_edu_module_documents);
+
+db.informal_edu_specialty_modules.hasMany(db.informal_edu_status_messages);
+db.informal_edu_status_messages.belongsTo(db.informal_edu_specialty_modules);
+
+db.informal_edu_session_specializations.hasMany(db.informal_edu_specialty_modules);
+db.informal_edu_specialty_modules.belongsTo(db.informal_edu_session_specializations);
+
 db.student_appeals_private_data.hasMany(db.student_appeals_parent_data);
 db.student_appeals_parent_data.belongsTo(db.student_appeals_parent_data);
 

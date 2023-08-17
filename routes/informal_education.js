@@ -9,12 +9,12 @@ const router = express.Router();
 router.get('/apply/session', authenticate, (req, res) => { 
     db.informal_edu_session_date.findAll({where:{status:1}, order:[['id', 'DESC']]}).then((resData) => {
         if (resData.length) {
-            res.json(resData)
+            res.json(resData);
         } else {
-            res.json([resData])
+            res.json([resData]);
         }
     }).catch(error => {
-        res.json(error)
+        res.json(error);
     })
 });
 
@@ -24,7 +24,7 @@ router.post('/payment', (req, res) => {
     const service = "informal_edu";
     if (module_id) { 
          db.informal_edu_user_modules.update({payment_status:1, status:6}, {where:{inf_education_apply_id:apply_id, module_id}}).then((resData) => {
-            if (resData.affectedRows) {
+            if (resData.affectedRows) {  // resData qaytarir amma resData.affectedRows qaytarmir
                 const title = 6;
                 const description = "Modul üzrə ödəniş edildi";
                 db.notifications.create({service, fin, title, description}).then((resNotification) => {
@@ -122,7 +122,7 @@ const apply_session_appointment = (apply_id, user_id, fin, ATIS_ID, specialty_AT
 router.post('/save', authenticate, (req, res) => {
     const {step, dataForm, status} = req.body;
     const {fin} = dataForm;
-    const user_id = req.currentUser.id; 
+    const user_id = req.currentUser.id ; 
     db.informal_edu_appeals.findOne({where:{user_id, fin}}).then(resApply => {
         if (resApply) {
 
@@ -494,16 +494,16 @@ router.get('/apply/show', authenticate, async (req, res) => {
     const user_id = req.currentUser.id ;
     const fin = req.currentUser.fin ; 
 
-    db.informal_edu_appeals.findAll({where:{user_id, fin}, include:{model:db.informal_edu_specializations, required:false, attributes:['specialty']}}).then(resApply => {
+    db.informal_edu_appeals.findOne({where:{user_id, fin}, include:{model:db.informal_edu_specializations, required:false, attributes:['specialty']}}).then(resApply => {
         const apply_id = resApply.id;
         db.informal_edu_previous_info.findAll({where:{inf_education_apply_id:apply_id}}).then(resPreviousInfo => {
             db.informal_edu_knowledge_and_skills.findAll({attributes:[['file_name', 'sample_pic']], where:{file_type:"image", inf_education_apply_id:apply_id}}).then(resSamplePic => {
                 db.informal_edu_knowledge_and_skills.findAll({attributes:[['file_name', 'skills_exp']], where:{file_type:"document", inf_education_apply_id:apply_id}}).then(resSkillsExp => {
                     db.informal_edu_work_experience.findAll({where:{inf_education_apply_id:apply_id}}).then(resWorkExperience => {
-                        db.informal_edu_user_modules.findAll({attributes:['user_id', 'inf_education_apply_id', 'module_id', [db.sequelize.fn("IF", {"status" : 0 }, 1, 1), 'status'], 
+                        db.informal_edu_user_modules.findAll({attributes:['user_id', 'inf_education_apply_id', 'module_id', [db.sequelize.fn("IF", {"user_id" : 0 }, 1, 1), 'status'], // if status ishlemir chunki status uniquedir amma bashqalari ishleyir
                         ['payment_status', 'module_payment_status'], [db.sequelize.fn("IF", {"payment_status" : 0 }, 'Ödəniş edilməyib', 'Ödəniş edilib'), 'module_payment_message']],
                            where:{user_id, inf_education_apply_id:apply_id}, include:[{model:db.informal_edu_module_documents, required:false, attributes:['certificate', 'protocol',
-                        'extract'], include:[{model:db.informal_edu_specialty_modules, required:false, attributes:['name', 'module_name'], include:[{model:db.informal_edu_status_messages,
+                        'extract'], include:[{model:db.informal_edu_specialty_modules, required:false, attributes:['name'/*, 'module_name'*/], include:[{model:db.informal_edu_status_messages,
                         required:true, attributes:[['message', 'module_status_message']]}]}]}]}).then(resModules => {
                             res.json({
                                 id: resApply.id,
@@ -547,8 +547,8 @@ router.get('/apply/show', authenticate, async (req, res) => {
                                 module_status: resModules !== null ? 1 : 0,
                                 step: resApply.step,
                                 status: resApply.apply_status
-                            })
-                        })
+                            });
+                        });
                     });
                 });
             });
@@ -571,27 +571,28 @@ router.get('/apply/show', authenticate, async (req, res) => {
  */
 
 router.get('/apply/history', authenticate, async (req, res) => {
+    const app = [] ;
     const user_id = req.currentUser.id ;
-    const apply = await db.informal_edu_appeals.findAll({attributes:['id','session_id', 'user_id', 'apply_status', 'ATIS_ID' , 'specialty_ATIS_ID' ,
-    [db.sequelize.fn("if", "apply_status" > '5', 'Nəzəri imtahandan keçdi', 'Nəzəri imtahandan keçmədi'), 'theo_exam_message']], where:{user_id}});
-    const session_name = await db.informal_edu_session_date.findAll({attributes:['name'], where:{id:apply[0].session_id}});
-    const specialty = await db.informal_edu_specializations.findAll({attributes:['specialty'], where:{ATIS_ID:apply[0].ATIS_ID, specialty_ATIS_ID: apply[0].specialty_ATIS_ID}});
-    const theo_minimum_point = await db.informal_edu_session_date.findAll({attributes:['theo_minimum_point'], where:{id:apply[0].session_id}});
-    const theo_questions_number = await db.informal_edu_session_date.findAll({attributes:['theo_questions_number'], where:{id:apply[0].session_id}});
-    const theo_value = await db.informal_edu_session_exam_results.findAll({attributes:['theo_value'], where:{inf_education_apply_id:apply[0].id , session_id:apply[0].session_id}});
-    const theo_exam_date = await db.informal_edu_session_date.findAll({attributes:['theo_exam_date'], where:{id:apply[0].session_id}});
-    const exam_not_passed = await db.informal_edu_session_exam_results.findAll({attributes:['exam_not_passed'], where:{inf_education_apply_id:apply[0].id, session_id:apply[0].session_id}});
-    apply.push(session_name);
-    apply.push(specialty);
-    apply.push(theo_minimum_point);
-    apply.push(theo_questions_number);
-    apply.push(theo_value);
-    apply.push(theo_exam_date);
-    apply.push(exam_not_passed);
+    const apply = await db.informal_edu_appeals.findOne({attributes:['id','session_id', 'user_id', 'apply_status', 'ATIS_ID' , 'specialty_ATIS_ID' ,
+    [db.sequelize.fn("if", "apply_status" > 5, 'Nəzəri imtahandan keçdi', 'Nəzəri imtahandan keçmədi'), 'theo_exam_message']], where:{user_id}});
+    const session_name = await db.informal_edu_session_date.findOne({attributes:['name'], where:{id:apply.session_id}});
+    const specialty = await db.informal_edu_specializations.findAll({attributes:['specialty'], where:{ATIS_ID:apply.ATIS_ID, specialty_ATIS_ID: apply.specialty_ATIS_ID}});
+    const theo_minimum_point = await db.informal_edu_session_date.findOne({attributes:['theo_minimum_point'], where:{id:apply.session_id}});
+    const theo_questions_number = await db.informal_edu_session_date.findOne({attributes:['theo_questions_number'], where:{id:apply.session_id}});
+    const theo_value = await db.informal_edu_session_exam_results.findAll({attributes:['theo_value'], where:{inf_education_apply_id:apply.id , session_id:apply.session_id}});
+    const theo_exam_date = await db.informal_edu_session_date.findOne({attributes:['theo_exam_date'], where:{id:apply.session_id}});
+    const exam_not_passed = await db.informal_edu_session_exam_results.findAll({attributes:['exam_not_passed'], where:{inf_education_apply_id:apply.id, session_id:apply.session_id}});
+    app.push(session_name);
+    app.push(specialty);
+    app.push(theo_minimum_point);
+    app.push(theo_questions_number);
+    app.push(theo_value);
+    app.push(theo_exam_date);
+    app.push(exam_not_passed);
 
     
-        if (typeof(apply) === 'object') {
-           res.json(apply);
+        if (typeof(app) === 'object') {
+           res.json(app);
         } else {
             res.json({
                 status: false,
