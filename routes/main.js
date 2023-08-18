@@ -444,26 +444,26 @@ router.post('/send_user_for_verification', (req, res) => {
   const message = !isEng
     ? `Təsdiqləmə şifrəsi: ${code} Paylaşmayın!`
     : `Confirmation password: ${code} Do not share!`;
-    db.phone_verification.findAll({
+    db.phone_verification.findOne({
       attributes: ['id', 'count'],
       where: {
-        phone: email,
+        phone,
         country_code: 1,
-        number_wait_date: { [Op.gt]: sequelize.fn('NOW') },
+        number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
       },
     }).then((eChek) => {
     if (Number((eChek || {}).count || 0) < 5) {
-      db.users.findAll({ where: { email } }).then((u) => {
-        if (u && u.phone && phone == u.phone.substring(u.phone.length - 4)) {
-            db.phone_verification.findAll({
+      db.users.findOne({ where: { email } }).then((u) => {
+        if (u && u.phone /* && phone == u.phone.substring(u.phone.length - 4)*/) {  // komente aldigimi bilmirem ne ucun yazilib
+            db.phone_verification.findOne({
               attributes: [
                 'phone',
                 'country_code',
                 'number_wait_date',
                 [
-                  sequelize.fn(
+                  db.sequelize.fn(
                     'if',
-                    { number_wait_date: { [Op.lt]: db.sequelize.fn('NOW') } },
+                    { 'number_wait_date': { [Op.gt]: db.sequelize.fn('NOW') } },
                     1,
                     0
                   ),
@@ -472,8 +472,9 @@ router.post('/send_user_for_verification', (req, res) => {
               ],
               where: { phone: u.phone, country_code: u.country_code },
             }).then((pd) => {
+              const expire = pd.number_wait_date > new Date() ? 1 : 0 ;
             if (pd) {
-              if (Number(pd.expire) === 1) {
+              if (Number(expire) === 1) {
                 smsSend(
                   u.phone,
                   message,
@@ -599,7 +600,7 @@ router.post('/get_user_phone', (req, res) => {
   const { email } = req.body;
   const isEng = (req.headers.language || '') === 'en';
   console.log({ isEng, la: req.headers.language });
-  db.users.findAll({ where: { email } }).then((u) => {
+  db.users.findOne({ where: { email } }).then((u) => {
     if (u && u.phone)
       res.json({
         err: '',
@@ -638,7 +639,7 @@ router.post('/get_user_phone', (req, res) => {
 router.post('/get_user_email_and_phone', (req, res) => {
   const { fin, birth_date } = req.body;
   const isEng = (req.headers.language || '') === 'en';
-  db.users.findAll({
+  db.users.findOne({
       attributes: ['phone', 'country_code', 'email'],
       where: { fin },
       include: [{ model: db.fin_data, required: false, where: { birth_date } }],
@@ -679,24 +680,24 @@ router.post('/get_user_email_and_phone', (req, res) => {
  */
 
 router.post('/send_email_for_verification', (req, res) => {
-  const { email } = req.body;
+  const { email , phone} = req.body;
   const code = 1; //Math.floor(Math.random() * (999999 - 0 + 1)) + 0;
   const message = `Elektron Tələbə Sənəd Qebulu Sistemi ucun qeydiyyat sifresi: ${code}`;
-  db.users.findAll({ where: { email } }).then((user) => {
+  db.users.findOne({ where: { email } }).then((user) => {
     if (user) {
       res.json({ err: 'Bu email ilə artıq qeydiyyatdan keçilib' });
     } else {
-      db.phone_verification.findAll({
+      db.phone_verification.findOne({
           attributes: ['phone', 'country_code', 'number_wait_date'],
-          where: { phone: email },
+          where: { phone },
         }).then((pd) => {
         if (pd) {
           if (pd.number_wait_date) {
-            db.phone_verification.findAll({
+            db.phone_verification.findOne({
                 attributes: ['id'],
                 where: {
-                  phone: email,
-                  number_wait_date: { [Op.gte]: sequelize.fn('NOW') },
+                  phone ,
+                  number_wait_date: { [Op.gte]: db.sequelize.fn('NOW') },
                 },
               }).then((is) => {
               if (!is) {
@@ -709,7 +710,7 @@ router.post('/send_email_for_verification', (req, res) => {
                         `NOW() + INTERVAL 2 MINUTE`
                       ),
                     },
-                    { where: { phone: email } }
+                    { where: { phone } }
                   ).then(() => {});
                 res.json({
                   err: '',
@@ -777,10 +778,10 @@ router.post('/send_email_for_verification', (req, res) => {
  */
 
 router.post('/email_verification_code', (req, res) => {
-  const { email, code } = req.body;
-  db.phone_verification.findAll({
+  const { phone, code } = req.body;    // phone evezine "email" yazilmishdi amma niye gore bashadushmedim
+  db.phone_verification.findOne({
       attributes: ['phone'],
-      where: { phone: email, code },
+      where: { phone, code },
     }).then((result) => {
     if (result && result.phone) {
       res.json({ err: '', message: 'Email adresiniz təsdiqləndi' });
@@ -897,7 +898,7 @@ router.get('/education_base', authenticate, (req, res) => {
  *
  */
 router.get('/material_base', authenticate, (req, res) => {
-  material_base.findAll({ order: [['name', 'ASC']] }).then(
+  db.material_base.findAll({ order: [['name', 'ASC']] }).then(
     (result) => res.json(result)
   );
 });
@@ -1008,7 +1009,7 @@ router.get('/utis_schools', authenticate, (req, res) => {
  *
  */
 router.get('/schools_new', authenticate, (req, res) => {
-  db.schools_new.findAll({ group: ['name'], order: [['name', 'ASC']] }).then((row) => res.json(result || []));
+  db.schools_new.findAll({ group: ['name'], order: [['name', 'ASC']] }).then((result) => res.json(result || []));
 });
 /**
  * @api {get} /main/uni_specialties uni_specialties
@@ -1200,7 +1201,7 @@ router.get('/services', authenticate, (req, res) => {
 router.post('/service_left_bar', authenticate, (req, res) => {
   const { serviceName } = req.body;
   const langKey = (req.headers.language || '') === 'en' ? 'En' : '';
-    service_left_bar.findAll({
+    db.service_left_bar.findAll({
       where: { service_name: serviceName },
       order: [['id', 'ASC']],
     }).then((result) =>
@@ -1311,7 +1312,7 @@ router.get('/atis_enterprises', authenticate, (req, res) => {
       ],
     }).then((result) =>
     res.json(
-      (result || []).map((e) => ({
+      (result || []).map((e) => ({  // sadece result yazanda ishleyir amma bile ishlemir
         ...e,
         name: e[langKey],
         specialty_ATIS_ID:
