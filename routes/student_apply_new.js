@@ -167,10 +167,10 @@ router.post('/sendStatus', authenticate, (req, res) => {
  */
 router.get('/by_id/:id', authenticate, (req, res) => {
     const { id } = req.params;                                                                                                                        
-    db.student_appeals.findAll({attributes:['id'], where:{user_id:req.currentUser.id, id}, include:[{model:db.student_appeals_private_data, required:false, include:[{model:db.student_appeals_parent_data, required:false, include:[{model:db.student_appeals_common_data, required:false}]}]}]}).then(apply => {
+    db.student_appeals.findOne({attributes:['id'], where:{user_id:req.currentUser.id, id}, include:[{model:db.student_appeals_private_data, required:false, include:[{model:db.student_appeals_parent_data, required:false, include:[{model:db.student_appeals_common_data, required:false}]}]}]}).then(apply => {
         if (apply) {                                         
             db.student_appeals_other_docs.findAll({where:{student_appeal_id:id}}).then(other_docs => {
-                res.json({ ...apply, other_docs });
+                res.json({apply, other_docs});
             });
         }
         else
@@ -195,7 +195,7 @@ router.get('/by_id/:id', authenticate, (req, res) => {
 
 router.post('/checkCustomPassword', authenticate, (req, res) => {
     const { customPassword, ReceptionLineId } = req.body;
-    db.custompasswords.findAll({where:{password:customPassword, line:ReceptionLineId}}).then(check => {
+    db.custompasswords.findOne({where:{password:customPassword, line:ReceptionLineId}}).then(check => {
         res.json({ status: !!check, showStageId: (check || {}).stage || '' });
     });
 });
@@ -223,7 +223,7 @@ router.get('/get_dim_data/:ReceptionLineId', authenticate, (req, res) => {
     const { ReceptionLineId } = req.params;      
     const { reject_statuses } = req.body ;     //ozum elave elemishem
     
-    db.dim_datas.findAll({where:{fin:req.currentUser.fin, ReceptionLineId, isFinish:0}, include:[{model:db.student_appeals, required:false, 
+    db.dim_datas.findOne({where:{fin: req.currentUser.fin, ReceptionLineId, isFinish:0}, include:[{model:db.student_appeals, required:false, 
         attributes:[[db.sequelize.fn("ifNUll", Sequelize.col('status'), 0), 'STATUS'],['id', 's_id']], where:{[Op.and]:[{[Op.or]:[{status:{[Op.notIn]:reject_statuses}}, {status:{[Op.is]:null}}]}, 
         {[Op.or]:[db.sequelize.where(db.sequelize.fn('YEAR', Sequelize.col('create_date')),(new Date()).getFullYear()), {create_date:{[Op.is]:null}}]}]}, order:[['status', 'DESC']], 
         include:[{model:db.atis_enterprises, required:false, attributes:[['name', 'e_name']]}]}]}).then(dim_data => {
@@ -443,7 +443,9 @@ router.post('/payment/get_url', authenticate, (req, res) => {
  */
 
 router.get('/all', authenticate, (req, res) => {                                                                                                                                                                                                     
-    db.student_appeals.findAll({attributes:['id', 'paymentChekScan', 'educationLevelId', 'ReceptionLineId', 'reject_description', 'reject_files', 'EducationStageId', 'institutionAtisId', 'EntranceYear', 'educationFormId', 'status', 'paymentTypeId'], where:{user_id:req.currentUser.id}, order:[['id', 'DESC']], include:[{model:db.student_appeals_common_data, required:false, attributes:['studentLoan']}]}).then(apply => {
+    db.student_appeals.findAll({attributes:['id', 'paymentChekScan', 'educationLevelId', 'ReceptionLineId', 'reject_description', 'reject_files', 'EducationStageId', 'institutionAtisId', 'EntranceYear', 'educationFormId', 'status', 'paymentTypeId'], 
+    where:{user_id:req.currentUser.id}, order:[['id', 'DESC']], 
+    include:[{model:db.student_appeals_common_data, required:false, attributes:['studentLoan']}]}).then(apply => {
         res.json(apply);
     });
 });
@@ -467,7 +469,8 @@ router.get('/all', authenticate, (req, res) => {
  */
 
 router.get('/check_apply', authenticate, (req, res) => {
-    db.receptionLine.findAll({where:{is_delete:0}}).then(receptionLine => {
+    const {active_statuses, reject_statuses} = req.body ;
+    db.receptionline.findAll({where:{is_delete:0}}).then(receptionLine => {
         if (req.currentUser.citizenshipId === 1) { 
             const docIsActive = _.some(receptionLine, (r) => r.ATIS_ID === 3 && r.group != 'Əcnəbi vətəndaşlar');
             const dimIsActive = _.some(receptionLine, (r) => [1, 2, 5, 6, 7, 8, 9].includes(r.ATIS_ID) && r.group != 'Əcnəbi vətəndaşlar');
@@ -475,9 +478,9 @@ router.get('/check_apply', authenticate, (req, res) => {
                 if (docIsActive && doc_appeals.length === 0) {
                     res.json(true);
                 } else if (dimIsActive) {                               
-                    db.dim_datas.findAll({where:{fin:req.currentUser.fin}, include:[{model:db.student_appeals, required:false, attributes:['status'], 
+                    db.dim_datas.findOne({where:{fin:req.currentUser.fin}, include:[{model:db.student_appeals, required:false, attributes:['status'], 
                     where:{[Op.and]:[{[Op.or]:[{status:{[Op.notIn]:reject_statuses}}, 
-                    {status:{[Op.is]:null}}]}, {[Op.or]:[db.sequelize.where(sequelize.fn('YEAR', db.sequelize.col('create_date')), (new Date()).getFullYear() ), 
+                    {status:{[Op.is]:null}}]}, {[Op.or]:[db.sequelize.where(db.sequelize.fn('YEAR', db.sequelize.col('create_date')), (new Date()).getFullYear() ), 
                     {create_date:{[Op.is]:null}}]}]}, order:[['status', 'DESC']]}]}).then(dim_appeals => {
                         if (dim_appeals.length > 0 && _.every(dim_appeals, (a) => a.status === null)) {
                             res.json(true);
@@ -492,17 +495,16 @@ router.get('/check_apply', authenticate, (req, res) => {
         } else {
             const anyIsActive = _.some(receptionLine, (r) => ![7, 8].includes(r.ATIS_ID) && r.group == 'Əcnəbi vətəndaşlar');
             const dimIsActive = _.some(receptionLine, (r) => [7, 8].includes(r.ATIS_ID) && r.group == 'Əcnəbi vətəndaşlar');
-            db.student_appeals.findAll({where:{[Op.and]:[db.sequelize.where(sequelize.fn('YEAR', db.sequelize.col('create_date')), (new Date()).getFullYear()), {fin:req.currentUser.fin}, {status:13}]}}).then(isFinis => { 
+            db.student_appeals.findOne({where:{[Op.and]:[db.sequelize.where(db.sequelize.fn('YEAR', db.sequelize.col('create_date')), (new Date()).getFullYear()), {fin:req.currentUser.fin}, {status:13}]}}).then(isFinis => { 
                 if (isFinis) {
                     res.json(false);                                                                          
                 } else {      
-                    // student_appeals.findAll({where:{[Op.and]:[sequelize.where(sequelize.fn('YEAR', sequelize.col('create_date')), (new Date()).getFullYear()), {fin:req.currentUser.fin}, {status:{[Op.in]:[active_statuses]}}, {ReceptionLineId:{[Op.in]:[]}}]}})
-                    db.student_appeals.findAll({where:{[Op.and]:[db.sequelize.where(sequelize.fn('YEAR', db.sequelize.col('create_date')), (new Date()).getFullYear()),
-                    {fin:req.currentUser.fin}, {status:active_statuses}, {ReceptionLineId:!anyIsActive ? [0] : receptionLine.filter((r) => ![7, 8].includes(r.ATIS_ID) && r.group == 'Əcnəbi vətəndaşlar').map(r => r.ATIS_ID)}]}}).then(doc_appeals => {
+                    db.student_appeals.findAll({where:{[Op.and]:[db.sequelize.where(Sequelize.fn('YEAR', db.sequelize.col('create_date')), (new Date()).getFullYear()),
+                    {fin:req.currentUser.fin}, {status:active_statuses}/*, {ReceptionLineId:!anyIsActive ? [0] : receptionLine.filter((r) => ![7, 8].includes(r.ATIS_ID) && r.group == 'Əcnəbi vətəndaşlar').map(r => r.ATIS_ID)}*/]}}).then(doc_appeals => {
                         if (anyIsActive && doc_appeals.length < 5) {
                             res.json(true);
                         } else if (dimIsActive) {                                                                                          
-                            db.dim_datas.findAll({where:{fin:req.currentUser.fin}, include:[{model:db.student_appeals, required:false, 
+                            db.dim_datas.findOne({where:{fin:req.currentUser.fin}, include:[{model:db.student_appeals, required:false, 
                             attributes:['status'], where:{[Op.and]:[{[Op.or]:[{status:{[Op.notIn]:reject_statuses}}, 
                             {status:{[Op.is]:null}}]}, {[Op.or]:[db.sequelize.where(db.sequelize.fn('YEAR', db.sequelize.col('create_date')), (new Date()).getFullYear()), 
                             {create_date:{[Op.is]:null}}]}]}, order:[['status', 'DESC']]}]}).then(dim_appeals => {
@@ -550,6 +552,7 @@ router.post('/save', authenticate, (req, res) => {
                     db.notifications.create({ service: 'student_appeal', fin: result.id, title: !!status ? 1 : 0, description: "" /*!!status ? 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.' : 'Müraciətinizin araşdırılması üçün ərizə formasında tələb olunan bütün məlumatların doldurulub, göndərilməsi tələb olunur.'*/, extra_data: "" }).then(() => {
                         db.student_appeals_other_docs.destroy({where:{student_appeal_id:result.id}}).then(() => {
                             if (other_docs) {
+                                return res.json(other_docs);
                                 other_docs.flatMap(item => {
                                     item.student_appeal_id = result.id ;
                                 })
