@@ -8,11 +8,11 @@ const router = express.Router();
 
 router.get("/is_nines/:fin", authenticate, (req, res) => {
   const { fin } = req.params; 
-  db.nines.findAll({attributes:['FIN'], where:{FIN:fin}}).then(is_nines => {
+  db.nines.findOne({attributes:['FIN'], where:{FIN:fin}}).then(is_nines => {
   	if(is_nines){
   		res.json(9);
   	} else {     
-  		db.elevens.findAll({attributes:['FIN'], where:{FIN:fin}}).then(is_elevens => {
+  		db.elevens.findOne({attributes:['FIN'], where:{FIN:fin}}).then(is_elevens => {
 			if(is_elevens){
 				res.json(11);
 			} else {
@@ -37,11 +37,12 @@ router.get("/notifications/:id", authenticate, (req, res) => {
 });
 
 router.post("/pts_new_status_from_qebul", authenticate, (req, res) => {
-  const { id, title, description } = req.body; // id - user_id
+  const { id, title, description } = req.body ; // id - user_id
   db.notifications.create({ service: 'pts', fin: id,  title, description }).then(() => {
       res.json({ success: true });
   });
 });
+
 
 router.use("/use_datas_for_qebul", authenticate, async (req, res) => {
   try {

@@ -4,7 +4,7 @@ const db = require('../models');
 const { querySyncForMap } = require("../middlewares/db.js") ;
 const { request } = require("../middlewares/helper.js") ;
 const { authenticate } = require("../middlewares/authenticate.js") ;
-const { olympiad_apply } = require("../models/olympiad_apply.js") ;
+const { olympiad_apply } = require("../models/olympiad_apply.js") ; 
 const { smsSend } = require("../middlewares/sms.js") ;
 const _ = require("lodash") ;
 require('dotenv').config() ;
@@ -223,7 +223,7 @@ router.get('/by_id/:id', authenticate, (req, res) => {
  *
  */
 
-router.post('/save', authenticate, (req, res) => {
+router.post('/save', authenticate, (req, res) => {  // buna mutleq qayidib arashdirmaq lazimdir error gorsedir
     const { step, dataForm, status, child_id } = req.body;
     const { certificates } = dataForm;
 
@@ -314,7 +314,7 @@ function saveApply(status, step, dataForm, user, child_id, callback) {
         };
         request(null, options, (result) => { 
             if (result.data && result.data.map(o => Number(o.id)).includes(Number(olympiad_type))) {
-                db.olympiad_apply.findAll({attributes:['id', 'user_id', 'status'], where:{fin, status:{[Op.in]:[0, 1]}, olympiad_process_id}}).then(olympiad_app => {
+                db.olympiad_apply.findOne({attributes:['id', 'user_id', 'status'], where:{fin, status:{[Op.in]:[0, 1]}, olympiad_process_id}}).then(olympiad_app => {
                     if (olympiad_app) {
                         if (Number(user_id) !== Number(olympiad_app.user_id) || Number(olympiad_app.status) !== 0) {
                             callback({ error: 'Müraciət zamanı xəta baş  verdi!' }); 

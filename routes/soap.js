@@ -35,12 +35,13 @@ router.post('/iamas', ipLimit('iamas'), (req, res) => {
 router.get('/iamas_update/:pin', authenticate, (req, res) => {
   const { pin } = req.params;
   const isAdmin = Number(req.currentUser.role) === 10;
+  
   if (pin && (isAdmin || req.currentUser.fin === pin)) {
     db.fin_data
-      .findAll({ attributes: ['fin', 'birth_date'], where: { fin: pin } })
+      .findOne({ attributes: ['fin', 'birth_date'], where: { fin: pin } })
       .then((check_fin) => {
         if (check_fin) {
-          const birth_date = check_fin.birth_date || '';
+          const birth_date = check_fin.birth_date || '' ;
           updateFinData(pin, birth_date, (data) => {
             res.json(data);
           });
@@ -62,14 +63,14 @@ router.post('/miqration', ipLimit('miqration'), (req, res) => {
       (success) => {
         if (success) {
           midRequest('/getDMXIssuedDocumentList', { pin }, (result) => {
-            const data = _.find(
+            const data = _.find( 
               result.data || [],
               (d) =>
                 d.active && (d.document || {}).documentType === iamasDocType
             );
             if (data) {
               db.fin_data
-                .findAll({ attributes: ['fin'], where: { fin: pin } })
+                .findOne({ attributes: ['fin'], where: { fin: pin } })
                 .then((check_fin) => {
                   const image = data.image;
                   const address = data.address || {};
@@ -614,7 +615,7 @@ router.post('/utis', authenticate, (req, res) => {
                           .then((chf) => {
                             if (!chf || isOlympiad) {
                               db.fin_data
-                                .findAll({
+                                .findOne({
                                   attributes: ['fin'],
                                   where: {
                                     fin: !fin ? 'UC' + stud_utis_code : fin,
@@ -1455,7 +1456,7 @@ const updateFinData = (pin, birthdate, calback) => {
         const data = _.find(result.data || [], 'active');
         if (data) {
           db.fin_data
-            .findAll({ attributes: ['fin'], where: { fin: pin } })
+            .findOne({ attributes: ['fin'], where: { fin: pin } })
             .then((check_fin) => {
               const image = (
                 _.find((data.personAz || {}).images || [], [
