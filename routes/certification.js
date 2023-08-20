@@ -85,8 +85,6 @@ router.get('/data', authenticate, (req, res) => {
     });
 });
 
-
-
 router.get('/exam_data', authenticate, (req, res) => {
     const fin = req.currentUser.fin;
     axios({

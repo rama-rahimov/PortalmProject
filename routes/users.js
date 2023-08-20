@@ -352,8 +352,8 @@ router.post('/password_update', authenticate, (req, res) => {
   const { password, old_password } = req.body;
   const user_id = req.currentUser.id;
   if ((password || "").length > 5) 
-    db.users.findAll({where:{id:user_id}}).then(check => {
-      if (check && isValidPassword(old_password, check[0].password))
+    db.users.findOne({where:{id:user_id}}).then(check => {
+      if (check && isValidPassword(old_password, check.password))
         db.users.update({password:setPassword(password)}, {where:{id:user_id}}).then(() => {
           res.json({ message: !isEng ? 'Şifrəniz uğurla dəyişdirildi!' : 'Your password has been successfully changed!' });
         });
