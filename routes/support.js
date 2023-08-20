@@ -28,7 +28,7 @@ const router = express.Router();
  */
 
 router.get('/all', authenticate, (req, res) => {   
-    db.support_apply.findAll({where:{fin:req.currentUser.fin}, order:[['id', 'DESC']]}).then(appeals => {
+    db.support_apply.findOne({where:{fin:req.currentUser.fin}, order:[['id', 'DESC']]}).then(appeals => {
         res.json(appeals);
     });
 });
@@ -222,7 +222,7 @@ router.post('/save', authenticate, (req, res) => {
                             certificates.flatMap(item => {
                                 item.support_apply_id = result.id ;
                             });
-                            db.support_files.bulkCreate(certificates).then(() => {
+                            db.support_files.bulkCreate(certificates).then((suppFiles) => {
                                 if (!!status) {
                                     sendDataProsys(dataForm, (r) => {
                                         if ((r || {}).id) {
@@ -271,9 +271,9 @@ function saveApply(status, step, dataForm, fin, callback) {
         consent, general_information, description_application, citizenship, first_name, born_country, area_id,
         last_name, father_name, birth_date, address, is_address_current, actual_address, country, email, phone } = dataForm
     if (id) {  
-        db.support_apply.findAll({attributes:['id', 'fin'], where:{id}}).then(support_app => {
+        db.support_apply.findOne({attributes:['id', 'fin'], where:{id}}).then(support_app => { 
             if (support_app) {
-                if (Number(fin) !== Number(support_app.fin)) {
+                if (fin !== support_app.fin) {
                     callback({ error: 'Invailid fin' });
                 } else { 
                     db.support_apply.update({

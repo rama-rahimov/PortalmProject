@@ -1,5 +1,6 @@
 const express = require('express') ;
 const axios = require("axios") ;
+const db = require('../models');
 const https = require("https") ;
 const { insertList } = require("../middlewares/db.js") ;
 const { authenticate } = require("../middlewares/authenticate.js") ;
@@ -32,6 +33,7 @@ const year = new Date().getFullYear();
  */
 
 router.get('/', authenticate, (req, res) => { 
+    const {year} = req.query ;
     db.vacancy_appeals.findOne({where:{ user_id: req.currentUser.id, is_director:0, year}}).then(apply => {
         if (apply)
             res.json(apply);
@@ -41,7 +43,7 @@ router.get('/', authenticate, (req, res) => {
 });
 
 router.get('/miq_ballar/:fin', authenticate, (req, res) => { 
-    db.miq_neticeler.findOne({where:{fin:req.params.fin, year}}).then(row => res.json(row));
+    db.miq_neticeler.findOne({where:{fin:req.params.fin}}).then(row => res.json(row));
 });
 
 

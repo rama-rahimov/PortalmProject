@@ -542,7 +542,7 @@ router.get('/check_apply', authenticate, (req, res) => {
 
 router.post('/save', authenticate, (req, res) => {
     const { status, step, dataForm } = req.body;
-    const { other_docs } = dataForm;
+    const { other_docs } = dataForm ;
     if ((req.currentUser.fin || "").toLowerCase() != (dataForm.fin.toLowerCase() || "").toLowerCase() || (!!dataForm.first_name && (req.currentUser.first_name || "").toLowerCase() != (dataForm.first_name || "").toLowerCase()) || (!!dataForm.last_name && (req.currentUser.last_name || "").toLowerCase() != (dataForm.last_name || "").toLowerCase())) {
         res.json({ error: 'Səhifəni yeniləyin', refresh: true });
     } else {
@@ -552,11 +552,10 @@ router.post('/save', authenticate, (req, res) => {
                     db.notifications.create({ service: 'student_appeal', fin: result.id, title: !!status ? 1 : 0, description: "" /*!!status ? 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.' : 'Müraciətinizin araşdırılması üçün ərizə formasında tələb olunan bütün məlumatların doldurulub, göndərilməsi tələb olunur.'*/, extra_data: "" }).then(() => {
                         db.student_appeals_other_docs.destroy({where:{student_appeal_id:result.id}}).then(() => {
                             if (other_docs) {
-                                return res.json(other_docs);
                                 other_docs.flatMap(item => {
                                     item.student_appeal_id = result.id ;
-                                })
-                                db.student_appeals_other_docs.bulkCreate(other_docs).then(() => {
+                                });
+                                db.student_appeals_other_docs.bulkCreate(other_docs).then((saod) => {
                                     if (!!status) {
                                         sendDataToATIS(dataForm, req.currentUser, result.id, (r) => {
                                             db.student_appeals.update({ status: 1, isSend: r ? 1 : 0 }, {where:{ id: result.id }}).then(() => {
@@ -641,8 +640,8 @@ function sendDataToATIS(dataForm, user, globalId, callback) {
         parent_confirming_document, parent_s_is_address_current, parent_first_name, parent_last_name,
         parent_father_name, parent_birth_date, parent_series, parent_number, parent_citizenshipId
     } = dataForm ; 
-    db.fin_data.findAll({where:{fin:parent_s_fin || ""}}).then(p_s => {
-        db.fin_data.findAll({where:{fin:parent_fin || ""}}).then(p => {
+    db.fin_data.findOne({where:{fin:parent_s_fin || ""}}).then(p_s => {
+        db.fin_data.findOne({where:{fin:parent_fin || ""}}).then(p => {
             const postData = {
                 globalId,
                 preparation,
@@ -895,21 +894,22 @@ function saveApply(status, step, dataForm, user, callback) {
         parent_number, parent_type, parent_genderId, parent_actual_address, parent_address, parent_phone,
         parent_country_code, parent_s_n_country, parent_n_country, parent_s_citizenshipId, parent_citizenshipId,
         parent_confirming_document, parent_s_confirming_document, parent_s_is_address_current, parent_is_address_current,
-        entranceSubSpecialization, entranceSubSpecialty, entranceSpecialization, factorStudyAz, teachingYear, semester, preparation_amount
+        entranceSubSpecialization, entranceSubSpecialty, entranceSpecialization, factorStudyAz, teachingYear, semester, preparation_amount , 
+        reject_statuses , dimTUr, dimCode, diminstitutionAtisId, dimFin
     } = dataForm ;
     const EntranceYear = teachingYear || new Date().getFullYear();
     let queryString = '';
     if (citizenshipId === 1) {
         if (Number(ReceptionLineId) !== 3) {  
-            queryString = db.student_appeals.findAll({attributes:['id', 'status'], where:{status:{[Op.notIn]:reject_statuses}, user_id, ReceptionLineId:{[Op.ne]:3}}}) ;
+            queryString = db.student_appeals.findOne({attributes:['id', 'status'], where:{status:{[Op.notIn]:reject_statuses}, user_id, ReceptionLineId:{[Op.ne]:3}}}) ;
         } else {        
-            queryString = db.student_appeals.findAll({attributes:['id', 'status'], where:{status:{[Op.notIn]:reject_statuses}, user_id, ReceptionLineId:3}}) ;
+            queryString = db.student_appeals.findOne({attributes:['id', 'status'], where:{status:{[Op.notIn]:reject_statuses}, user_id, ReceptionLineId:3}}) ;
         }
     } else {
         if (Number(ReceptionLineId) > 6) {  
-            queryString = db.student_appeals.findAll({attributes:['id', 'status'], where:{status:{[Op.notIn]:reject_statuses}, user_id, ReceptionLineId:{[Op.gt]:6}}}) ;
+            queryString = db.student_appeals.findOne({attributes:['id', 'status'], where:{status:{[Op.notIn]:reject_statuses}, user_id, ReceptionLineId:{[Op.gt]:6}}}) ;
         } else {  
-            queryString = db.student_appeals.findAll({attributes:['id', 'status'], where:{user_id, id: id || 0}}) ;
+            queryString = db.student_appeals.findOne({attributes:['id', 'status'], where:{user_id, id: id || 0}}) ;
         }
     }
     queryString.then(async (apply) => {
@@ -930,65 +930,67 @@ function saveApply(status, step, dataForm, user, callback) {
             if (count < 3 && (!id || (apply || {}).id) && !isFinish) {
                 //  querySync(`SELECT id FROM student_appeals WHERE status <12 and user_id=?`, [user_id]).then(apply => {
                 if (apply) {
-                    db.student_appeals.update({
-                        fin, user_id, status, step, ReceptionLineId, EducationStageId, educationLevelId, institutionAtisId, preparation,
-                        educationFormId, educationLanguageId, paymentTypeId, entranceSpecialtyPaymentAmount, specialtyPassword, checkCustomPassword,
-                        previousEduStageId, previousEduLevelId, passportScan, scanningCertificateOfHealth, previousEducationDocument,
-                        previousEducationLegalizedDocument, previousEducationTranslatedDocument, certificateOfLanguageInstruction,
-                        personnelRegistrationCard, biographyDocScan, photo3x4, workCertificateScan, workExperienceScan,
-                        publishedScientificWorksScan, publishedScientificWorkListScan, diplomaOfHigherEducationScan, entranceSpecialty,
-                        identityDocumentScan, diplomaOfDoctorOfPhilosophyScan, specialtyDimCode, basicEducation, pointsOnEntrance, factorStudyAz,
-                        dimNo, schoolDiplomaScan, higherSchoolDiplomaScan, higherVocationalEducationDiplomaScan, subordinateSpecialization,
-                        secondarySpecialEducationDiplomaScan, highEducationDiplomaScan, equivalenceOfSpecialtyDocScan, customPassword, teachingYear,
-                        medicalActivityDocScan, healthCertificateScan, militaryRegistrationDocumentScan, militaryIDDocumentScan, previousBasicEducation,
-                        paymentChekScan, cartType, cardBinCode, EntranceYear, militaryService, specialtyName, tur, previousInstitutionName,
-                        entranceSubSpecialization, entranceSubSpecialty, entranceSpecialization, semester, preparation_amount, update_date: new Date()
-                    }, {where: { id: apply.id }}).then((applyResult) => {
-                        if (applyResult.error) {
-                            callback({ error: applyResult.error });
-                        } else {
-                            db.student_appeals_private_data.update({
-                                fin, user_id, first_name, last_name, father_name, birth_date, actual_region, birth_certificate, have_residence_permit,
-                                is_address_current, actual_address, n_country, email, genderId, passport_series, passport_number,
-                                citizenship, address, maritalStatus, adress_in_foreign, last_live_country, phone, middle_name, country_code
-                            }, {where:{ student_appeal_id: apply.id }}).then((applyResult2) => {
-                                if (applyResult2.error) {
-                                    callback({ error: applyResult2.error });
-                                } else {
-                                    db.student_appeals_parent_data.update({
-                                        fin, user_id, parent_s_docType, parent_s_first_name, parent_s_last_name, parent_s_father_name, parent_s_birth_date,
-                                        parent_s_actual_region, parent_s_citizenship, parent_s_fin, parent_s_series, parent_s_number, parent_s_type,
-                                        parent_s_genderId, parent_s_actual_address, parent_s_address, parent_s_country_code, parent_s_phone, parent_s_citizenshipId, parent_citizenshipId,
-                                        parent_s_absence_reason, parent_absence_reason, parent_docType, parent_first_name, parent_last_name, parent_s_n_country, parent_n_country,
-                                        parent_father_name, parent_birth_date, parent_actual_region, parent_citizenship, parent_fin, parent_series,
-                                        parent_confirming_document, parent_s_confirming_document, parent_s_is_address_current, parent_is_address_current,
-                                        parent_number, parent_type, parent_genderId, parent_actual_address, parent_address, parent_phone, parent_country_code
-                                    }, {where:{ student_appeal_id: apply.id }}).then((applyResult3) => {
-                                        if (applyResult3.error) {
-                                            callback({ error: applyResult3.error });
-                                        } else {
-                                            db.student_appeals_common_data.update({
-                                                user_id, socialOtherDoc, description, socialDescription, socialStep, socialDecisionReason,
-                                                changeName, territorialIntegrityDisability, birthCertificate, changeNameDoc, typeHeroism, territorialIntegrityDeath,
-                                                militaryOperationMissing, militaryOperationDeath, degreeKinship, marriageCertificate, birthCertificateOfMartyredChild,
-                                                certificateFamilyComposition, certificateFamilyCompositionOther, documentConfirmingDisability, degreeDisability,
-                                                degreeDisabilityIDoc, degreeDisabilityIIDoc, reasonOrphanhood, deprivationParentalCare, documentParentsUnknown,
-                                                deathCertificateParents, deprivationParentalCareDoc2, deprivationParentalCareDoc3, deprivationParentalCareDoc4,
-                                                deprivationParentalCareDoc5, deprivationParentalCareDoc6, deprivationParentalCareDoc7, deprivationParentalCareDoc8,
-                                                documentStatusIDP, doubleScholarship, studentLoan, studentLoanType
-                                            }, {where:{ student_appeal_id: apply.id }}).then((applyResult4) => {
-                                                if (applyResult4.error) {
-                                                    callback({ error: applyResult4.error });
-                                                } else {
-                                                    callback({ id: apply.id });
-                                                }
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    });
+                    db.dim_datas.create({tur:dimTUr, specialtyDimCode:dimCode, institutionAtisId:diminstitutionAtisId, fin:dimFin}).then(dimDatas =>{
+                        db.student_appeals.update({
+                            fin, user_id, status, step, ReceptionLineId, EducationStageId, educationLevelId, institutionAtisId, preparation,
+                            educationFormId, educationLanguageId, paymentTypeId, entranceSpecialtyPaymentAmount, specialtyPassword, checkCustomPassword,
+                            previousEduStageId, previousEduLevelId, passportScan, scanningCertificateOfHealth, previousEducationDocument,
+                            previousEducationLegalizedDocument, previousEducationTranslatedDocument, certificateOfLanguageInstruction,
+                            personnelRegistrationCard, biographyDocScan, photo3x4, workCertificateScan, workExperienceScan,
+                            publishedScientificWorksScan, publishedScientificWorkListScan, diplomaOfHigherEducationScan, entranceSpecialty,
+                            identityDocumentScan, diplomaOfDoctorOfPhilosophyScan, specialtyDimCode, basicEducation, pointsOnEntrance, factorStudyAz,
+                            dimNo, schoolDiplomaScan, higherSchoolDiplomaScan, higherVocationalEducationDiplomaScan, subordinateSpecialization,
+                            secondarySpecialEducationDiplomaScan, highEducationDiplomaScan, equivalenceOfSpecialtyDocScan, customPassword, teachingYear,
+                            medicalActivityDocScan, healthCertificateScan, militaryRegistrationDocumentScan, militaryIDDocumentScan, previousBasicEducation,
+                            paymentChekScan, cartType, cardBinCode, EntranceYear, militaryService, specialtyName, tur, previousInstitutionName,
+                            entranceSubSpecialization, entranceSubSpecialty, entranceSpecialization, semester, preparation_amount, update_date: new Date()
+                        }, {where: { id: apply.id }}).then((applyResult) => {
+                            if (applyResult.error) {
+                                callback({ error: applyResult.error });
+                            } else {
+                                db.student_appeals_private_data.update({
+                                    fin, user_id, first_name, last_name, father_name, birth_date, actual_region, birth_certificate, have_residence_permit,
+                                    is_address_current, actual_address, n_country, email, genderId, passport_series, passport_number,
+                                    citizenship, address, maritalStatus, adress_in_foreign, last_live_country, phone, middle_name, country_code
+                                }, {where:{ student_appeal_id: apply.id }}).then((applyResult2) => {
+                                    if (applyResult2.error) {
+                                        callback({ error: applyResult2.error });
+                                    } else {
+                                        db.student_appeals_parent_data.update({
+                                            fin, user_id, parent_s_docType, parent_s_first_name, parent_s_last_name, parent_s_father_name, parent_s_birth_date,
+                                            parent_s_actual_region, parent_s_citizenship, parent_s_fin, parent_s_series, parent_s_number, parent_s_type,
+                                            parent_s_genderId, parent_s_actual_address, parent_s_address, parent_s_country_code, parent_s_phone, parent_s_citizenshipId, parent_citizenshipId,
+                                            parent_s_absence_reason, parent_absence_reason, parent_docType, parent_first_name, parent_last_name, parent_s_n_country, parent_n_country,
+                                            parent_father_name, parent_birth_date, parent_actual_region, parent_citizenship, parent_fin, parent_series,
+                                            parent_confirming_document, parent_s_confirming_document, parent_s_is_address_current, parent_is_address_current,
+                                            parent_number, parent_type, parent_genderId, parent_actual_address, parent_address, parent_phone, parent_country_code
+                                        }, {where:{ student_appeal_id: apply.id }}).then((applyResult3) => {
+                                            if (applyResult3.error) {
+                                                callback({ error: applyResult3.error });
+                                            } else {
+                                                db.student_appeals_common_data.update({
+                                                    user_id, socialOtherDoc, description, socialDescription, socialStep, socialDecisionReason,
+                                                    changeName, territorialIntegrityDisability, birthCertificate, changeNameDoc, typeHeroism, territorialIntegrityDeath,
+                                                    militaryOperationMissing, militaryOperationDeath, degreeKinship, marriageCertificate, birthCertificateOfMartyredChild,
+                                                    certificateFamilyComposition, certificateFamilyCompositionOther, documentConfirmingDisability, degreeDisability,
+                                                    degreeDisabilityIDoc, degreeDisabilityIIDoc, reasonOrphanhood, deprivationParentalCare, documentParentsUnknown,
+                                                    deathCertificateParents, deprivationParentalCareDoc2, deprivationParentalCareDoc3, deprivationParentalCareDoc4,
+                                                    deprivationParentalCareDoc5, deprivationParentalCareDoc6, deprivationParentalCareDoc7, deprivationParentalCareDoc8,
+                                                    documentStatusIDP, doubleScholarship, studentLoan, studentLoanType
+                                                }, {where:{ student_appeal_id: apply.id }}).then((applyResult4) => {
+                                                    if (applyResult4.error) {
+                                                        callback({ error: applyResult4.error });
+                                                    } else {
+                                                        callback({ id: apply.id });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    })
                 } else {
                     db.student_appeals.create({
                         fin, user_id, status, step, ReceptionLineId, EducationStageId, educationLevelId, institutionAtisId, preparation,
