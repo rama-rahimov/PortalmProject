@@ -66,7 +66,7 @@ router.get('/miq_ballar/:fin', authenticate, (req, res) => {
  */
 
 router.get('/director', authenticate, (req, res) => {  
-    db.vacancy_appeals.findOne({where:{user_id:req.currentUser.id, is_director:1, year}}).then(apply => {
+    db.vacancy_appeals.findAll({where:{user_id:req.currentUser.id, is_director:1, year:req.query.year}}).then(apply => {
         if (apply)
             res.json(apply);
         else
@@ -94,10 +94,15 @@ router.get('/director', authenticate, (req, res) => {
  */
 
 router.get('/check_apply_director', authenticate, (req, res) => {
-    db.vacancy_appeals.findAll({attributes:[[db.sequelize.fn('COUNT', Sequelize.col('id')), 'count']], where:{user_id:req.currentUser.id, year, status:{[Op.gt]:0, is_director:1}}}).then(apply => {
-        res.json(Number((apply || {}).count || 0) > 0);
+    db.vacancy_appeals.findAll({where:{user_id:req.currentUser.id, year:req.query.year, status:{[Op.gt]:0}, is_director:1}}).then(apply => {
+        let count = 0;
+        for (let i = 1 ; i <= apply.length; i++) { 
+            count =+  i  ;
+        }
+        res.json((count || 0) > 0);
     });
 });
+
 
 /**
  * @api {get} /vacancy_appeals/check_apply check_apply
@@ -118,18 +123,45 @@ router.get('/check_apply_director', authenticate, (req, res) => {
  */
 
 router.get('/check_apply', authenticate, (req, res) => {
-    db.vacancy_appeals.findAll({attributes:[[db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']], where:{user_id:req.currentUser.id, year, status:{[Op.gt]:0}, is_director:0}}).then(apply => {
-        res.json(Number((apply || {}).count || 0) > 0);
+    db.vacancy_appeals.findAll({where:{user_id:req.currentUser.id, year:req.query.year, status:{[Op.gt]:0}, is_director:0}}).then(apply => {
+        let count = 0;
+        for (let i = 1 ; i <= apply.length; i++) { 
+            count =+  i  ;
+        }
+        res.json((count || 0) > 0);
     });
 });
 
 // educations, academic_degrees, rewards, work_exp_list, emp_history_scans, teaching_aids, appealed_vacancies
-router.get('/extra_data/:table_name/:id', authenticate, (req, res) => {
+router.get('/extra_data/:table_name/:id', authenticate, async (req, res) => {
     const { id, table_name } = req.params; 
-    if (['educations', 'academic_degrees', 'rewards', 'work_exp_list', 'emp_history_scans', 'teaching_aids', 'appealed_vacancies'].includes(table_name))
-    db.table_name.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}).then(result => {
-            res.json(result);
-        });
+    let result ;
+    if (['educations', 'academic_degrees', 'rewards', 'work_exp_list', 'emp_history_scans', 'teaching_aids', 'appealed_vacancies'].includes(table_name)){
+        switch (table_name) {
+            case 'educations':
+                result = await db.educations.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}) ;
+                break ;
+            case 'academic_degrees':
+                result = await db.academic_degrees.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}) ;
+                break
+            case 'rewards':
+                result = await db.rewards.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}) ;
+                break ;
+            case 'work_exp_list':
+                result = await db.work_exp_list.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}) ;
+                break ;
+            case 'emp_history_scans':
+                result = await db.emp_history_scans.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}) ;
+                break ;
+            case 'teaching_aids':
+                result = await db.teaching_aids.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}) ;
+                break ;
+            case 'appealed_vacancies':
+                result = await db.appealed_vacancies.findAll({where:{user_id:req.currentUser.id, vacancy_appeals_id:id}}) ;
+          }
+
+          res.json(result);
+    }
     else
         res.json({ error: 'table not found' });
 });
@@ -153,13 +185,13 @@ router.get('/extra_data/:table_name/:id', authenticate, (req, res) => {
  */
 
 router.get('/has_draft/dmiq', authenticate, (req, res) => {  
-    db.vacancy_appeals.findOne({attributes:['creation_date', 'status'], where:{user_id:req.currentUser.id, is_director:1, year}}).then(result => {
+    db.vacancy_appeals.findAll({attributes:['creation_date', 'status'], where:{user_id:req.currentUser.id, is_director:1, year:req.query.year}}).then(result => {
         res.json(result);
     });
 });
 
 router.get('/has_draft/miq', authenticate, (req, res) => { 
-    db.vacancy_appeals.findOne({attributes:['creation_date', 'status'], where:{user_id:req.currentUser.id, is_director:0, year}}).then(result => {
+    db.vacancy_appeals.findAll({attributes:['creation_date', 'status'], where:{user_id:req.currentUser.id, is_director:0, year:req.query.year}}).then(result => {
         res.json(result);
     });
 });
@@ -183,7 +215,7 @@ router.get('/has_draft/miq', authenticate, (req, res) => {
  */
 
 router.get('/appealed_vacancies', authenticate, (req, res) => {   
-    db.appealed_vacancies.findAll({where:{user_id:req.currentUser.id}, order:[['priority', 'ASC']] , include:[{model:db.vacancy_appeals, required:false, attributes:['is_director'], where:{year}}]}).then(result => {
+    db.appealed_vacancies.findAll({where:{user_id:req.currentUser.id}, order:[['priority', 'ASC']] , include:[{model:db.vacancy_appeals, required:false, attributes:['is_director'], where:{year:req.query.year}}]}).then(result => {
         res.json(result);
     });
 });
@@ -213,12 +245,11 @@ router.get('/dq_miq_exam', authenticate, async (req, res) => {
     const miq = await db.dq_miq_exam.findOne({attributes:[[db.sequelize.fn("CONCAT", 
     Sequelize.col("fenn"), ";", Sequelize.col("umumi_bal")), 'concat']], where:{imtahan:{[Op.ne]:'dq'}, umumi_bal:{[Op.ne]:0}, fin:req.currentUser.fin}, 
     order:[['tarix', 'DESC']]});
-    const exam = [] ;
-    exam.push(dq);
-    exam.push(miq);
-    
-        if (exam[0]) {
-        return    res.json(exam);
+    let exam ;
+    if(dq !== null) exam = dq ;
+    if(miq !== null) exam = miq ;
+        if (exam) {
+            res.json(exam);
         }
         else
             res.json({});
@@ -254,7 +285,7 @@ router.post('/save', authenticate, (req, res) => {
     const { step, dataForm, status } = req.body;
     let { educations, academic_degrees, rewards, work_exp_list, teaching_aids, appealed_vacancies, emp_history_scans } = dataForm;
 
-    work_exp_list = work_exp_list.filter(i => Object.values(i).filter(i => i).length > 0);
+    // work_exp_list = work_exp_list.filter(i => Object.values(i).filter(i => i).length > 0);
 
     saveVacancyApply(status, step, dataForm, req.currentUser.id, (result) => {
         (async () => {
@@ -311,22 +342,15 @@ router.post('/remove_draft', authenticate, (req, res) => {
 
     if (vacancy_appeals_id) {    
         db.educations.destroy({where:{ vacancy_appeals_id }}).then(() => {
-            db.academic_degrees.destroy({where:{ vacancy_appeals_id }}).then(() => {
-                db.emp_history_scans.destroy({where:{ vacancy_appeals_id }}).then(() => {
-                    db.rewards.destroy({where:{vacancy_appeals_id}}).then(() => {
-                        db.work_exp_list.destroy({where:{vacancy_appeals_id}}).then(() => {
-                            db.teaching_aids.destroy({where:{ vacancy_appeals_id }}).then(() => {
-                                db.appealed_vacancies.destroy({where:{ vacancy_appeals_id }}).then(() => {
-                                    db.vacancy_appeals.findAll({where:{ id: vacancy_appeals_id }}).then(() => {
-                                        res.end();
-                                    });
-                                });
-                            });
-                        });
-                    });
-                });
-            });
-        });
+        db.academic_degrees.destroy({where:{ vacancy_appeals_id }}).then(() => {
+        db.emp_history_scans.destroy({where:{ vacancy_appeals_id }}).then(() => {
+        db.rewards.destroy({where:{vacancy_appeals_id}}).then(() => {
+        db.work_exp_list.destroy({where:{vacancy_appeals_id}}).then(() => {
+        db.teaching_aids.destroy({where:{ vacancy_appeals_id }}).then(() => {
+        db.appealed_vacancies.destroy({where:{ vacancy_appeals_id }}).then(() => {
+        db.vacancy_appeals.findOne({where:{ id: vacancy_appeals_id }}).then(() => {
+        res.end();
+        }); }); }); }); }); }); }); });
     } else res.send();
 });
 
@@ -379,7 +403,7 @@ function saveVacancyApply(status, step, dataForm, user_id, callback) {
         borncity, address, phone, email, social_status, has_current_work,
         actual_address, addresscity, is_address_current, genderId, miq_subject, dq_subject,
         position, position_type, dq_point, miq_point, has_rewards, social_scan,
-        has_academic_degree, work_exp, pedagogical_exp, is_director, choose_position
+        has_academic_degree, work_exp, pedagogical_exp, is_director, choose_position, year
     } = dataForm;
 
     db.vacancy_appeals.findOne({attributes:['id'], where:{user_id, year, is_director:(is_director || 0)}}).then(vacancy_appeals => {
