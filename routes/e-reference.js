@@ -297,10 +297,9 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
  */
 
 router.get('/all', authenticate, (req, res) => {
-    db.e_documents_apply.findAll({where:{user_id:req.currentUser.id}, order:[['id', 'DESC']], include:[{model:db.e_documents, required: false, attributes:['pdf_diplom_url', 'hash']}]}).then(appeals => {
-        res.json(appeals);
-    });
-});
+    db.e_documents_apply.findAll({where:{user_id:req.currentUser.id}, order:[['id', 'DESC']], 
+    include:[{model:db.e_documents, required: false, attributes:['pdf_diplom_url', 'hash']}]}).then(appeals => {
+    res.json(appeals) }) });
 
 
 /**
@@ -324,19 +323,19 @@ router.get('/all', authenticate, (req, res) => {
 router.get('/by_id/:id', authenticate, (req, res) => {
     const { id } = req.params;
     if (id) { 
-        db.e_documents_apply.findOne({ where:{ id,  user_id:req.currentUser.id} }).then(apply => {
-            if (apply) { 
-                db.e_document_files.findAll({where:{e_documents_apply_id:id}}).then(certificates => {
-                    res.json({ ...apply, certificates });
-                });
-            } else {
-                res.json({ error: 'e_reference_apply not found' });
-            }
-        });
+    db.e_documents_apply.findOne({ where:{ id,  user_id:req.currentUser.id} }).then(apply => {
+    if (apply) { 
+    db.e_document_files.findAll({where:{e_documents_apply_id:id}}).then(certificates => {
+    res.json({ ...apply, certificates });
+    });
     } else {
-        res.json({ error: 'id incorrect' });
+    res.json({ error: 'e_reference_apply not found' });
     }
-});
+    });
+    } else {
+    res.json({ error: 'id incorrect' });
+    }
+    });
 
 /**
  * @api {post} /e-reference/save/ save
@@ -380,28 +379,27 @@ router.post('/save', authenticate, (req, res) => {
     saveApply(0, step, dataForm, req.currentUser.id, (result) => {
         //console.log('save end ', result)
 
-        if (result.id)  
-            db.e_document_files.destroy({where:{e_documents_apply_id:result.id}}).then(() => {
-                if (certificates) {
-                    certificates.flatMap(item => {
-                        item.e_documents_apply_id =  result.id
-                    });
-                    db.e_document_files.bulkCreate(certificates).then(() => {
-                        sendData(status, dataForm, result.id, () => {
-                                    res.json(result)
-                        });
-                      });
-                } else {
-                    sendData(status, dataForm, result.id, () => {
-                        res.json(result);
-                    });
-                }
-            });
-        else
-            res.json(result);
-
+    if (result.id)  
+    db.e_document_files.destroy({where:{e_documents_apply_id:result.id}}).then(() => {
+    if (certificates) {
+    certificates.flatMap(item => {
+    item.e_documents_apply_id =  result.id
     });
-});
+    db.e_document_files.bulkCreate(certificates).then(() => {
+    sendData(status, dataForm, result.id, () => {
+    res.json(result)
+    });
+    });
+    } else {
+    sendData(status, dataForm, result.id, () => {
+    res.json(result);
+    });
+    }
+    });
+    else
+    res.json(result);
+    });
+    });
 
 
 
@@ -409,218 +407,214 @@ module.exports = router;
 
 function saveApply(status, step, dataForm, user_id, callback) {
     const { id, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
-        is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency, entranceYear,
-        program, edu_institution, level_of_edu, specialty, edu_duration, actual_region } = dataForm;
+    is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency, entranceYear,
+    program, edu_institution, level_of_edu, specialty, edu_duration, actual_region } = dataForm;
 
     if (id) {
                 
-        db.e_documents_apply.findOne({attributes:['id', 'user_id'], where:{id}}).then(e_reference_apply => {
-            if (e_reference_apply) {
-                if (Number(user_id) !== Number(e_reference_apply.user_id)) {
-                    callback({ error: 'Invailid user_id' });
-                } else {
-                    db.e_documents_apply.update({status, step, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
-                        is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency,
-                        program, edu_institution, level_of_edu, specialty, edu_duration, actual_region, entranceYear, update_date: new Date().toISOString().slice(0, 19).replace('T', ' ')}, {where:{id}}).then(e_reference_apply_update => {
-                        if (e_reference_apply_update.error) {
+    db.e_documents_apply.findOne({attributes:['id', 'user_id'], where:{id}}).then(e_reference_apply => {
+    if (e_reference_apply) {
+    if (Number(user_id) !== Number(e_reference_apply.user_id)) {
+    callback({ error: 'Invailid user_id' });
+    } else {
+    db.e_documents_apply.update({status, step, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
+    is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency,
+    program, edu_institution, level_of_edu, specialty, edu_duration, actual_region, entranceYear, update_date: new Date().toISOString().slice(0, 19).replace('T', ' ')}, {where:{id}}).then(e_reference_apply_update => {
+    if (e_reference_apply_update.error) {
                             callback({ error: e_reference_apply_update.error });
-                        } else {
-                            callback({ id });
-                        }
-                    });
-                }
-            } else {
-                callback({ error: 'support apply by id not found' });
-            }
-        });
+    } else {
+    callback({ id });
+    }
+    });
+    }
+    } else {
+    callback({ error: 'support apply by id not found' });
+    }
+    });
     } else {
         
-        db.e_documents_apply.create({user_id, status, step, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
-            is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency,
-            program, edu_institution, level_of_edu, specialty, edu_duration, actual_region, entranceYear, update_date: new Date().toISOString().slice(0, 19).replace('T', ' ')}).then(applyId => {
-            if (applyId.error) {
-                callback({ error: applyId.error });
-            } else {
-                callback({ id: applyId });
-            }
-        });
+    db.e_documents_apply.create({user_id, status, step, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
+    is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency,
+    program, edu_institution, level_of_edu, specialty, edu_duration, actual_region, entranceYear, update_date: new Date().toISOString().slice(0, 19).replace('T', ' ')}).then(applyId => {
+    if (applyId.error) {
+    callback({ error: applyId.error });
+    } else {
+    callback({ id: applyId });
     }
-}
+    });
+    }
+    }
 
 
 
 function sendData(status, dataForm, id, callback) {
     if (status) {
-        if (Number(dataForm.direction) === 1) {
-            if (Number(dataForm.document_purpose) === 1) {
-                const doc_scan = ((dataForm.certificates || [])[0] || {}).doc_scan || "";
-                let ext = "";
-                let fileBase64 = "";
-                if (doc_scan) {
-                    ext = doc_scan.substr(doc_scan.lastIndexOf(".") + 1, doc_scan.length);
-                }
-                //const doc_scan_path = decodeURI(doc_scan).replace('/getfile/doc_scan~', '/var/www/sexsi_kabinet/api/uploads/doc_scan/')
-                fs.readFile(filePath(doc_scan), { encoding: 'base64' }, (err, data) => {
-                    if (!err) {
-                        const conctentType = data.substr(0, 4) !== 'data' ? 'data:image/png;base64,' : '';
-                        fileBase64 = data;
-                        // fileBase64 = (conctentType + data);
-                    }
-                    /*console.log({
-                        RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
-                        TransactionID: id,
-                        PrivateCode: dataForm.PrivateCode,
-                        FileBase64: fileBase64,
-                        FileExtension: ext,
-                        Description: dataForm.description || ""
-                    });*/
-                    sendRequest({
-                        RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
-                        TransactionID: id,
-                        PrivateCode: dataForm.PrivateCode,
-                        FileBase64: fileBase64,
-                        FileExtension: ext,
-                        Description: dataForm.description || ""
-                    }, 'CreateEdocument', (r) => {
-                        updateStatus(id, r.result && r.result.CreateEdocumentResult && r.result.CreateEdocumentResult.Status === 200, callback, 1);
-                    });
-                });
-
-
-            } else {
-                createReferencePdf(id, (docNo) => {
-                    updateStatus(id, docNo, callback);
-                });
-            }
-        }
-        else if ([2, 4].includes(Number(dataForm.direction))) {
-
-            createATISReferencePdf(id, (docNo) => {
-                updateStatus(id, docNo, callback);
-            });
-        }
-        else if ([3].includes(Number(dataForm.direction))) {
-            createPTSReferencePdf(id, (docNo) => {
-                updateStatus(id, docNo, callback);
-            });
-        }
-        else if ([5].includes(Number(dataForm.direction))) {
-            createExamReferencePdf(id, (docNo) => {
-                updateStatus(id, docNo, callback);
-            });
-        }
-        else { 
-            db.notifications.destroy({where:{service:"reference", fin:id, title:0}}).then(() => {
-                db.notifications.create({service: 'reference', fin: id, title: 0, description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: ""}).then(() => {
-                    callback(false);
-                }
-            )});
-        }
-    } else {  
-        db.notifications.destroy({where:{service:"reference", fin:id, title:0}}).then(() => {
-            db.notifications.create({service: 'reference', fin: id, title: 0, description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
-                callback(true);
-            }
-        )});
+    if (Number(dataForm.direction) === 1) {
+    if (Number(dataForm.document_purpose) === 1) {
+    const doc_scan = ((dataForm.certificates || [])[0] || {}).doc_scan || "";
+    let ext = "";
+    let fileBase64 = "";
+    if (doc_scan) {
+    ext = doc_scan.substr(doc_scan.lastIndexOf(".") + 1, doc_scan.length);
     }
-}
+    //const doc_scan_path = decodeURI(doc_scan).replace('/getfile/doc_scan~', '/var/www/sexsi_kabinet/api/uploads/doc_scan/')
+    fs.readFile(filePath(doc_scan), { encoding: 'base64' }, (err, data) => {
+    if (!err) {
+    const conctentType = data.substr(0, 4) !== 'data' ? 'data:image/png;base64,' : '';
+    fileBase64 = data;
+    // fileBase64 = (conctentType + data);
+    }
+    /*console.log({
+    RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
+    TransactionID: id,
+    PrivateCode: dataForm.PrivateCode,
+    FileBase64: fileBase64,
+    FileExtension: ext,
+    Description: dataForm.description || ""
+    });*/
+    sendRequest({
+    RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
+    TransactionID: id,
+    PrivateCode: dataForm.PrivateCode,
+    FileBase64: fileBase64,
+    FileExtension: ext,
+    Description: dataForm.description || ""
+    }, 'CreateEdocument', (r) => {
+    updateStatus(id, r.result && r.result.CreateEdocumentResult && r.result.CreateEdocumentResult.Status === 200, callback, 1);
+    });
+    });
+    } else {
+    createReferencePdf(id, (docNo) => {
+    updateStatus(id, docNo, callback);
+    });
+    }
+    }
+    else if ([2, 4].includes(Number(dataForm.direction))) {
+
+    createATISReferencePdf(id, (docNo) => {
+    updateStatus(id, docNo, callback);
+    });
+    }
+    else if ([3].includes(Number(dataForm.direction))) {
+    createPTSReferencePdf(id, (docNo) => {
+    updateStatus(id, docNo, callback);
+    });
+    }
+    else if ([5].includes(Number(dataForm.direction))) {
+    createExamReferencePdf(id, (docNo) => {
+    updateStatus(id, docNo, callback);
+    });
+    }
+    else { 
+    db.notifications.destroy({where:{service:"reference", fin:id, title:0}}).then(() => {
+    db.notifications.create({service: 'reference', fin: id, title: 0, description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: ""}).then(() => {
+    callback(false);
+    }
+    )});
+    }
+    } else {  
+    db.notifications.destroy({where:{service:"reference", fin:id, title:0}}).then(() => {
+    db.notifications.create({service: 'reference', fin: id, title: 0, description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
+    callback(true);
+    }
+    )});
+    }
+    }
 
 const updateStatus = (id, docNo, callback, status = 3) => {
     db.notifications.destroy({where:{service:"reference", fin:id, title:(docNo ? 1 : 0)}}).then(() => {
-        db.notifications.create({service: 'reference', fin: id, title: !!docNo ? 1 : 0, description: !!docNo ? 'Sizin müraciətiniz qeydə alınmışdır.' : 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
-            if (docNo) { 
-                db.e_documents_apply.update({ status, docNo: status === 1 ? null : docNo },{where:{ id }}).then(() => {
-                    callback(true);
-                });
-            } else {
-                callback(false);
-            }
-        }
+    db.notifications.create({service: 'reference', fin: id, title: !!docNo ? 1 : 0, description: !!docNo ? 'Sizin müraciətiniz qeydə alınmışdır.' : 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
+    if (docNo) { 
+    db.e_documents_apply.update({ status, docNo: status === 1 ? null : docNo },{where:{ id }}).then(() => {
+    callback(true);
+    });
+    } else {
+    callback(false);
+    }
+    }
     )});
-}
+    }
 
 const sendRequest = (data, func, callback) => {
     soap.createClient("http://127.0.0.1/getfile/wsdl~xreference.wsdl", {
-        wsdl_options: {
-            timeout: 18000
-        }
+    wsdl_options: {
+    timeout: 18000
+    }
     }, (err, client) => {
-        if (client) {
-            let clientFunction = null ;
-            if (func === 'GetInfoByPIN') {
-                clientFunction = client.GetInfoByPIN;
-            } else {
-                clientFunction = client.CreateEdocument
-            }
-            clientFunction(data, (err2, result) => {
-                //console.log({ err: err2, result });
-                callback({ err: err2, result });
-            }, { timeout: 18000 });
-        } else {
-            callback({ err, result: null });
-        }
+    if (client) {
+    let clientFunction = null ;
+    if (func === 'GetInfoByPIN') {
+    clientFunction = client.GetInfoByPIN;
+    } else {
+    clientFunction = client.CreateEdocument
+    }
+    clientFunction(data, (err2, result) => {
+    //console.log({ err: err2, result });
+    callback({ err: err2, result });
+    }, { timeout: 18000 });
+    } else {
+    callback({ err, result: null });
+    }
     });
-}
+    }
 
 const getAtisData = (data, callback) => {
     //const fins = ['691GQYW', '661XWP2', '', '61FYRD9'];
     //console.log(`${process.env.ATIS_HOST}/api/student/info?fin=${/*data.fin*/fins[Number(data.educationLevelId || 0)]}${data.entranceYear ? '&EntranceYear=' + data.entranceYear : ''}${data.educationLevelId ? '&EducationLevelId=' + data.educationLevelId : ''}${data.educationStageId ? '&EducationStageId=' + data.educationStageId : ''}`);
     atisLogin((token) => {
-        if (token) {
-            axios.post(`${process.env.ATIS_HOST}/api/student/info`, { Fin: data.fin, EntranceYear: data.entranceYear || '', EducationLevelId: data.educationLevelId || '', EducationStageId: data.educationStageId || '' }, {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            }).then(result => {
-                //console.log(result.data)
-                callback(result);
-            }).catch(e => {
-                console.log({ e })
-                if (Object.keys(e).length > 0) {
-                    callback(false);
-                } 
-            })
-        } else {
-            callback(false);
-        }
+    if (token) {
+    axios.post(`${process.env.ATIS_HOST}/api/student/info`, { Fin: data.fin, EntranceYear: data.entranceYear || '', EducationLevelId: data.educationLevelId || '', EducationStageId: data.educationStageId || '' }, {
+    headers: {
+    'Authorization': 'Bearer ' + token
+    }
+    }).then(result => {
+    //console.log(result.data)
+    callback(result);
+    }).catch(e => {
+    console.log({ e })
+    if (Object.keys(e).length > 0) {
+    callback(false);
+    } 
+    })
+    } else {
+    callback(false);
+    }
     });
-}
+    }
 
 const getExamData = (data, callback) => {
-
     axios.post(`${process.env.EXAM_HOST}/api/exam_points`, data/*{
         "fin": "2GV5BCP"
     }*/, {
-            headers: {
-                'token': process.env.EXAM_TOKEN
-            }
-        }).then(result => {
-            callback(result);
-        }).catch(e => {
-            console.log('getExamData response:', e.message);
-            if (Object.keys(e).length > 0) {
-                callback(false);
-            }
-        });
-}
+    headers: {
+    'token': process.env.EXAM_TOKEN
+    }
+    }).then(result => {
+    callback(result);
+    }).catch(e => {
+    console.log('getExamData response:', e.message);
+    if (Object.keys(e).length > 0) {
+    callback(false);
+    }
+    });
+    }
 
 const getPTSData = (data, callback) => {
 
     axios.post(`${process.env.VACANCIES_HOST}:${process.env.VACANCIES_PORT}/api/users/student/info`, data /*{
         "fin": "7M0629Y", "education_level": 1, "type": 1
     }*/, {
-            headers: {
-                'Authorization': 'Bearer ' + process.env.VACANCIES_TOKEN
-            }
-        }).then(result => {
-            callback(result);
-        }).catch(e => {
-            if (Object.keys(e).length > 0) {
-                callback(false);
-            }
-
-        });
-}
+    headers: {
+    'Authorization': 'Bearer ' + process.env.VACANCIES_TOKEN
+    }
+    }).then(result => {
+    callback(result);
+    }).catch(e => {
+    if (Object.keys(e).length > 0) {
+    callback(false);
+    }
+    });
+    }
 
 const filePath = (f) => {
     var file = f.replace('/getfile/', '').split('~');
@@ -642,8 +636,8 @@ function makeid(length) {
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var charactersLength = characters.length;
     for (var i = 0; i < length; i++) {
-        result.push(characters.charAt(Math.floor(Math.random() *
-            charactersLength)));
+    result.push(characters.charAt(Math.floor(Math.random() *
+    charactersLength)));
     }
     return result.join('');
 }
@@ -666,12 +660,12 @@ const atisLogin = (callback) => {
 
     axios(options).then(login_result => {
         if (((login_result || {}).data || {}).access_token) {
-            callback(((login_result || {}).data || {}).access_token);
+        callback(((login_result || {}).data || {}).access_token);
         } else {
-            callback(false);
+        callback(false);
         }
     });
-}
+    }
 
 
 
@@ -773,339 +767,346 @@ const programs = [
 ]
 function createReferencePdf(id, callback) { 
     db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
-        if (result) {
-            const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
-            sendRequest({
-                RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
-                /*StatusCode: 1,
-                EducationLevelCode: 7,
-                PIN: '5HMC722' */
-                StatusCode: Number(result.document_purpose),
-                EducationLevelCode: Number(result.edu_level),
-                PIN: result.fin
-            }, 'GetInfoByPIN', (r) => {
-                if ((((((r.result || {}).GetInfoByPINResult || {}).ResponseDetails || {}).ResponseDetail || [])[0] || {}).Name) {
-                    const data = r.result.GetInfoByPINResult.ResponseDetails.ResponseDetail[0];
-                    var t = new Date().toISOString().slice(0, 10).split('-');
-                    genrationNumber('RX', (docNo) => {
-                        const hash = genrateHash(docNo);
-                        readyDoc({
-                            program: (_.find(programs, (e) => e.id === Number(data.Program)) || { name: '' }).name,
-                            document_purpose_type: Number(result.document_purpose),
-                            filename: makeid(8) + id + makeid(8),
-                            first_name: data.Name,
-                            last_name: data.Surname,
-                            fin: data.PIN,
-                            birth_date: data.BirthDate,
-                            direction: 'XARİCDƏ TƏHSİL',
-                            document_purpose: data.StatusName + ' OLMASI',
-                            country: data.CountryName,
-                            edu_level: (_.find(eduLevels, (e) => e.id === Number(data.EducationLevelCode) && e.direction === Number(result.direction)) || { name: '' }).name,
-                            specialty: data.SpecialtyName,
-                            edu_duration: (data.StartDate && data.StartDate.getFullYear() || "") + '-' + (data.GraduateDate && data.GraduateDate.getFullYear() || ""),
-                            reference_provided,
-                            edu_institution: data.UniversitetName,
-                            document_series_number: docNo,
-                            hash,
-                            type: Number(result.direction)
-                        }, (filename) => {
-                            if (filename) {  
-                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
-                                    var endDate = new Date();
-                                    endDate.setDate(endDate.getDate() + 30);
-                                    var end_date = Number(result.document_purpose) !== 1 ? endDate.toISOString().split('T')[0] : '2090-01-01';
-                                    if (checkDocument && checkDocument.id) {
-                                        db.e_documents.update({
-                                            fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: 'Xaricdə təhsil',
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }, {where:{document_no: docNo}}).then(() => {
-                                            callback(docNo);
-                                        });
-                                    } else {
-                                        db.e_documents.create({
-                                            fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: 'Xaricdə təhsil',
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }).then(() => {
-                                            callback(docNo);
-                                        }) ;
-                                    }
-                                });
-                            } else {
-                                callback(false);
-                            }
-                        })
-                    });
-                } else {
-                    callback(false);
-                }
-            });
-        } else {
-            callback(false);
-        }
+    if (result) {
+    const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
+    sendRequest({
+    RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
+    /*StatusCode: 1,
+    EducationLevelCode: 7,
+    PIN: '5HMC722' */
+    StatusCode: Number(result.document_purpose),
+    EducationLevelCode: Number(result.edu_level),
+    PIN: result.fin
+    }, 'GetInfoByPIN', (r) => {
+    if ((((((r.result || {}).GetInfoByPINResult || {}).ResponseDetails || {}).ResponseDetail || [])[0] || {}).Name) {
+    const data = r.result.GetInfoByPINResult.ResponseDetails.ResponseDetail[0];
+    var t = new Date().toISOString().slice(0, 10).split('-');
+    genrationNumber('RX', (docNo) => {
+    const hash = genrateHash(docNo);
+    readyDoc({
+    program: (_.find(programs, (e) => e.id === Number(data.Program)) || { name: '' }).name,
+    document_purpose_type: Number(result.document_purpose),
+    filename: makeid(8) + id + makeid(8),
+    first_name: data.Name,
+    last_name: data.Surname,
+    fin: data.PIN,
+    birth_date: data.BirthDate,
+    direction: 'XARİCDƏ TƏHSİL',
+    document_purpose: data.StatusName + ' OLMASI',
+    country: data.CountryName,
+    edu_level: (_.find(eduLevels, (e) => e.id === Number(data.EducationLevelCode) && e.direction === Number(result.direction)) || { name: '' }).name,
+    specialty: data.SpecialtyName,
+    edu_duration: (data.StartDate && data.StartDate.getFullYear() || "") + '-' + (data.GraduateDate && data.GraduateDate.getFullYear() || ""),
+    reference_provided,
+    edu_institution: data.UniversitetName,
+    document_series_number: docNo,
+    hash,
+    type: Number(result.direction)
+    }, (filename) => {
+    if (filename) {  
+    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    var endDate = new Date();
+    endDate.setDate(endDate.getDate() + 30);
+    var end_date = Number(result.document_purpose) !== 1 ? endDate.toISOString().split('T')[0] : '2090-01-01';
+    if (checkDocument && checkDocument.id) {
+    db.e_documents.update({
+    fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', 
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: 'Xaricdə təhsil',
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }, {where:{document_no: docNo}}).then(() => {
+    callback(docNo);
     });
-};
+    } else {
+    db.e_documents.create({
+    fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', 
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: 'Xaricdə təhsil',
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }).then(() => {
+    callback(docNo);
+    }) ;
+    }
+    });
+    } else {
+    callback(false);
+    }
+    })
+    });
+    } else {
+    callback(false);
+    }
+    });
+    } else {
+    callback(false);
+    }
+    });
+    };
 
 
 function createATISReferencePdf(id, callback) {
     db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
-        if (result) {
-            const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
-            getAtisData({
-                fin: result.fin,
-                entranceYear: result.entranceYear,
-                educationLevelId: result.edu_level,
-                educationStageId: Number(result.direction) === 2 ? 2 : 1
-            }, (r) => {
-                if (r && r.data && r.data.studentInfo && r.data.studentInfo[0]) {
-                    const data = r.data.studentInfo[0];
-                    var t = new Date().toISOString().slice(0, 10).split('-');
-                    genrationNumber('R' + (Number(result.direction) === 2 ? 'A' : 'O'), (docNo) => {
-                        //console.log('docNo', docNo)
-                        const hash = genrateHash(docNo);
-                        readyDoc({
-                            ...result,
-                            filename: makeid(8) + id + makeid(8),
-                            direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
-                            document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                            country: 'AZƏRBAYCAN',
-                            edu_level: data.educationLevel,
-                            specialty: data.specialty,
-                            educationForm: data.educationForm,
-                            paymentType: data.paymentType,
-                            entranceYear: data.entranceYear,
-                            course: data.course,
-                            region: data.region,///???
-                            grade: data.grade,///???
-                            educationLanguage: data.educationLanguage,
-                            edu_duration: data.educationDuration,
-                            reference_provided,
-                            edu_institution: data.institution,
-                            document_series_number: docNo,
-                            hash,
-                            type: Number(result.direction)
-                        }, (filename) => {
-                            if (filename) {  
-                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
-                                    var endDate = new Date();
-                                    endDate.setDate(endDate.getDate() + 30);
-                                    var end_date = endDate.toISOString().split('T')[0];
-                                    if (checkDocument && checkDocument.id) {
-                                        db.e_documents.update({
-                                            fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }, {where:{ document_no: docNo }}).then(() => {
-                                            callback(docNo);
-                                        });
-                                    } else {
-                                        db.e_documents.create({
-                                            fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }).then(() => {
-                                            callback(docNo);
-                                        });
-                                    }
-                                });
-                            } else {
-                                callback(false);
-                            }
-                        })
-                    })
-                } else {
-                    callback(false);
-                }
-            });
-        } else {
-            callback(false);
-        }
+    if (result) {
+    const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
+    getAtisData({
+    fin: result.fin,
+    entranceYear: result.entranceYear,
+    educationLevelId: result.edu_level,
+    educationStageId: Number(result.direction) === 2 ? 2 : 1
+    }, (r) => {
+    if (r && r.data && r.data.studentInfo && r.data.studentInfo[0]) {
+    const data = r.data.studentInfo[0];
+    var t = new Date().toISOString().slice(0, 10).split('-');
+    genrationNumber('R' + (Number(result.direction) === 2 ? 'A' : 'O'), (docNo) => {
+    //console.log('docNo', docNo)
+    const hash = genrateHash(docNo);
+    readyDoc({
+    ...result,
+    filename: makeid(8) + id + makeid(8),
+    direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    country: 'AZƏRBAYCAN',
+    edu_level: data.educationLevel,
+    specialty: data.specialty,
+    educationForm: data.educationForm,
+    paymentType: data.paymentType,
+    entranceYear: data.entranceYear,
+    course: data.course,
+    region: data.region,///???
+    grade: data.grade,///???
+    educationLanguage: data.educationLanguage,
+    edu_duration: data.educationDuration,
+    reference_provided,
+    edu_institution: data.institution,
+    document_series_number: docNo,
+    hash,
+    type: Number(result.direction)
+    }, (filename) => {
+    if (filename) {  
+    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    var endDate = new Date();
+    endDate.setDate(endDate.getDate() + 30);
+    var end_date = endDate.toISOString().split('T')[0];
+    if (checkDocument && checkDocument.id) {
+    db.e_documents.update({
+    fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf',
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }, {where:{ document_no: docNo }}).then(() => {
+    callback(docNo);
     });
-};
+    } else {
+    db.e_documents.create({
+    fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', 
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }).then(() => {
+    callback(docNo);
+    });
+    }
+    });
+    } else {
+    callback(false);
+    }
+    })
+    })
+    } else {
+    callback(false);
+    }
+    });
+    } else {
+    callback(false);
+    }
+    });
+    };
 
 
 
 function createPTSReferencePdf(id, callback) {  
     db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
-        if (result) {
-            const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
-            getPTSData({
-                fin: result.fin,
-                education_level: result.edu_level,
-                type: Number(result.document_purpose) === 1 ? 1 : 2
-            }, (apiResult) => {
-                if (((apiResult || {}).data || {}).success) {
-                    const data = apiResult.data.studentinfo;
-                    var t = new Date().toISOString().slice(0, 10).split('-');
-                    genrationNumber('RP', (docNo) => {
-                        const hash = genrateHash(docNo);
-                        readyDoc({
-                            ...result,
-                            filename: makeid(8) + id + makeid(8),
-                            direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
-                            document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                            country: 'AZƏRBAYCAN',
-                            edu_level: data.education_level_name,
-                            specialty: data.specialty_name,
-                            educationForm: data.education_form,
-                            paymentType: data.tuition,
-                            entranceYear: data.admission_year,
-                            course: data.course,
-                            educationLanguage: data.teaching_language_name,
-                            edu_duration: data.education_duration_name,
-                            edu_institution: data.enterprises_name,
-                            reference_provided,
-                            document_series_number: docNo,
-                            hash,
-                            type: Number(result.direction)
-                        }, (filename) => {
-                            if (filename) {  
-                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
-                                    var endDate = new Date();
-                                    endDate.setDate(endDate.getDate() + 30);
-                                    var end_date = endDate.toISOString().split('T')[0];
+    if (result) {
+    const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
+    getPTSData({
+    fin: result.fin,
+    education_level: result.edu_level,
+    type: Number(result.document_purpose) === 1 ? 1 : 2
+    }, (apiResult) => {
+    if (((apiResult || {}).data || {}).success) {
+    const data = apiResult.data.studentinfo;
+    var t = new Date().toISOString().slice(0, 10).split('-');
+    genrationNumber('RP', (docNo) => {
+    const hash = genrateHash(docNo);
+    readyDoc({
+    ...result,
+    filename: makeid(8) + id + makeid(8),
+    direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    country: 'AZƏRBAYCAN',
+    edu_level: data.education_level_name,
+    specialty: data.specialty_name,
+    educationForm: data.education_form,
+    paymentType: data.tuition,
+    entranceYear: data.admission_year,
+    course: data.course,
+    educationLanguage: data.teaching_language_name,
+    edu_duration: data.education_duration_name,
+    edu_institution: data.enterprises_name,
+    reference_provided,
+    document_series_number: docNo,
+    hash,
+    type: Number(result.direction)
+    }, (filename) => {
+    if (filename) {  
+    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    var endDate = new Date();
+    endDate.setDate(endDate.getDate() + 30);
+    var end_date = endDate.toISOString().split('T')[0];
 
-                                    if (checkDocument && checkDocument.id) {
-                                        db.e_documents.update({
-                                            fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: 'Peşə təhsili',
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }, {where:{ document_no: docNo }}).then(() => {
-                                            callback(docNo);
-                                        });
-                                    } else {
-                                        db.e_documents.create({
-                                            fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: 'Peşə təhsili',
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }).then(() => {
-                                            callback(docNo);
-                                        });
-                                    }
-                                });
-                            } else {
-                                callback(false);
-                            }
-                        })
-                    })
-                } else {
-                    callback(false);
-                }
-            });
-        } else {
-            callback(false);
-        }
+    if (checkDocument && checkDocument.id) {
+    db.e_documents.update({
+    fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', 
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: 'Peşə təhsili',
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }, {where:{ document_no: docNo }}).then(() => {
+    callback(docNo);
     });
-};
+    } else {
+    db.e_documents.create({
+    fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', 
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: 'Peşə təhsili',
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }).then(() => {
+        callback(docNo);
+    });
+    }
+    });
+    } else {
+        callback(false);
+    }
+    })
+    })
+    } else {
+    callback(false);
+    }
+    });
+    } else {
+    callback(false);
+    }
+    });
+    };
 
 
 function createExamReferencePdf(id, callback) {
     db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
-        if (result) {
-            //console.log('start result', result);
-            const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
-            getExamData({
-                fin: result.fin
-            }, (apiResult) => {
-                if ((((apiResult || {}).data || {}).data || [])[0]) {
+    if (result) {
+    //console.log('start result', result);
+    const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
+    getExamData({
+    fin: result.fin
+    }, (apiResult) => {
+    if ((((apiResult || {}).data || {}).data || [])[0]) {
 
-                    const exam_datas = apiResult.data.data;
-                    //console.log('start exam_datas', exam_datas);
-                    var t = new Date().toISOString().slice(0, 10).split('-');
-                    genrationNumber('RH', (docNo) => {
-                        const hash = genrateHash(docNo);
-                        readyDoc({
-                            ...result,
-                            filename: makeid(8) + id + makeid(8),
-                            document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                            direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
-                            country: 'AZƏRBAYCAN',
-                            reference_provided,
-                            document_series_number: docNo,
-                            exam_datas: exam_datas.map(e => ({ ...e, type: (_.find(exam_types, (r) => r.id === e.exam_id) || {}).name })),
-                            hash,
-                            type: Number(result.direction)
-                        }, (filename) => {
-                            //console.log('start filename', filename);
-                            if (filename) { 
-                                db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
-                                    var endDate = new Date();
-                                    endDate.setDate(endDate.getDate() + 30);
-                                    var end_date = endDate.toISOString().split('T')[0];
+    const exam_datas = apiResult.data.data;
+    //console.log('start exam_datas', exam_datas);
+    var t = new Date().toISOString().slice(0, 10).split('-');
+    genrationNumber('RH', (docNo) => {
+    const hash = genrateHash(docNo);
+    readyDoc({
+    ...result,
+    filename: makeid(8) + id + makeid(8),
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    direction: (_.find(directions, (e) => e.id === Number(result.direction)) || { name: '' }).name,
+    country: 'AZƏRBAYCAN',
+    reference_provided,
+    document_series_number: docNo,
+    exam_datas: exam_datas.map(e => ({ ...e, type: (_.find(exam_types, (r) => r.id === e.exam_id) || {}).name })),
+    hash,
+    type: Number(result.direction)
+    }, (filename) => {
+    //console.log('start filename', filename);
+    if (filename) { 
+    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    var endDate = new Date();
+    endDate.setDate(endDate.getDate() + 30);
+    var end_date = endDate.toISOString().split('T')[0];
 
-                                    if (checkDocument && checkDocument.id) {
-                                        db.e_documents.update({
-                                            fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: 'İnsan resursları',
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }, {where:{ document_no: docNo }}).then(() => {
-                                            callback(docNo);
-                                        });
-                                    } else {
-                                        db.e_documents.create({
-                                            fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
-                                            end_date,
-                                            file_details: JSON.stringify({
-                                                document_name: 'ARAYIŞ',
-                                                direction: 'İnsan resursları',
-                                                document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
-                                                given_date: t[2] + '.' + t[1] + '.' + t[0]
-                                            })
-                                        }).then(() => {
-                                            callback(docNo);
-                                        });
-                                    }
-                                });
-                            } else {
-                                callback(false);
-                            }
-                        })
-                    })
-                } else {
-                    callback(false);
-                }
-            });
-        } else {
-            callback(false);
-        }
+    if (checkDocument && checkDocument.id) {
+    db.e_documents.update({
+    fin: result.fin, diplom_cat_id: 5, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', 
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: 'İnsan resursları',
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }, {where:{ document_no: docNo }}).then(() => {
+    callback(docNo);
     });
-};
+    } else {
+    db.e_documents.create({
+    fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    end_date,
+    file_details: JSON.stringify({
+    document_name: 'ARAYIŞ',
+    direction: 'İnsan resursları',
+    document_purpose: (_.find(document_purposes, (r) => r.id === Number(result.document_purpose)) || {}).name,
+    given_date: t[2] + '.' + t[1] + '.' + t[0]
+    })
+    }).then(() => {
+    callback(docNo);
+    });
+    }
+    });
+    } else {
+    callback(false);
+    }
+    })
+    })
+    } else {
+    callback(false);
+    }
+    });
+    } else {
+    callback(false);
+    }
+    });
+    };
 
 
 function genrateHash(docNo) {
