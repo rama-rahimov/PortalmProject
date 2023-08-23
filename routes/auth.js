@@ -71,18 +71,18 @@ router.post("/", (req, res) => {
   const isEng = (req.headers.language || "") === "en" ;
   const { email, password } = req.body; 
   db.users.findOne({attributes:['id', 'password', 'email', 'role', 'phone', 'country_code', 'fin', 'citizenshipId', 'asanLogin'], where:{email, asanLogin:0}, include:[{model:db.fin_data,  required:false}]}).then(user => {
-    if (user) {
-      if (isValidPassword(password, user.password)){
-        delete user.password;
-        res.json(toAuthJSON(user));
-      } else {
-        res.status(400).json({ errors: { global: !isEng ? "Şifrə düzgün deyil" : "Password is incorrect" } });
-      }
-    } else {
-      res.status(400).json({ errors: { global: !isEng ? "İstifadəçi tapılmadı" : "User not found" } });
-    }
+  if (user) {
+  if (isValidPassword(password, user.password)){
+  delete user.password;
+  res.json(toAuthJSON(user));
+  } else {
+  res.status(400).json({ errors: { global: !isEng ? "Şifrə düzgün deyil" : "Password is incorrect" } });
+  }
+  } else {
+  res.status(400).json({ errors: { global: !isEng ? "İstifadəçi tapılmadı" : "User not found" } });
+  }
   });
-});
+  });
 
 
 /**
@@ -125,120 +125,118 @@ router.post("/asan_login", (req, res) => {
   request(null, options, (result) => {
     //console.log(result);
     if (result.data.status == 200) {
-      var decoded = jwt.decode(token);
-      var person = ((decoded || {}).main || {}).person || {};
-      if (person.pin)
-        (async () => {
-          let user;
-          let finData = {
-            first_name: person.name,
-            last_name: person.surname,
-            father_name: person.fatherName  
-          };                                                                                                                                                       
-          db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{fin:person.pin}}).then(checkuser => {
-            user = checkuser;
-          }).catch(() => { });
-          if (!user) {
-            db.users.create({fin:person.pin, asanLogin:1}).then(insertuser => {
-              if (insertuser) {
-                user = {
-                  id: insertuser.insertId,
-                  asanLogin: 1,
-                  fin: person.pin
-                }
-              }
-            }).catch((e) => { console.log(e) });
-          }  
-          db.fin_data.findOne({where:{fin:person.pin}}).then(checkfin_data => {
-            if (checkfin_data) {
-              finData = checkfin_data;
-            }
-          }).catch(() => { });
-
-          if (!finData.birth_date) {
-            await getSoapFindata(person.pin).then(soapFinData => {
-              finData = soapFinData;
-            }).catch(() => { });
-          }
-          saveFinData(person.pin, finData, (resultSave) => {
-            if (resultSave.error || !user)
-              res.status(400).json({ errors: { global: "Xəta baş verdi." } });
-            else {
-              res.json({
-                user: toAuthJSON({
-                  ...user,
-                  ...finData
-                })
-              });
-            }
-          });
-
-        })();
+    var decoded = jwt.decode(token);
+    var person = ((decoded || {}).main || {}).person || {};
+    if (person.pin)
+    (async () => {
+    let user;
+    let finData = {
+    first_name: person.name,
+    last_name: person.surname,
+    father_name: person.fatherName  
+    };                                                                                                                                                       
+    db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{fin:person.pin}}).then(checkuser => {
+    user = checkuser;
+    }).catch(() => { });
+    if (!user) {
+    db.users.create({fin:person.pin, asanLogin:1}).then(insertuser => {
+    if (insertuser) {
+    user = {
+    id: insertuser.insertId,
+    asanLogin: 1,
+    fin: person.pin
+    }
+    }
+    }).catch((e) => { console.log(e) });
+    }  
+    db.fin_data.findOne({where:{fin:person.pin}}).then(checkfin_data => {
+    if (checkfin_data) {
+    finData = checkfin_data;
+    }
+    }).catch(() => { });
+    if (!finData.birth_date) {
+    await getSoapFindata(person.pin).then(soapFinData => {
+    finData = soapFinData;
+    }).catch(() => { });
+    }
+    saveFinData(person.pin, finData, (resultSave) => {
+    if (resultSave.error || !user)
+    res.status(400).json({ errors: { global: "Xəta baş verdi." } });
+    else {
+    res.json({
+    user: toAuthJSON({
+    ...user,
+    ...finData
+    })
+    });
+    }
+    });
+    })();
     } else
-      res.status(400).json({ errors: { global: "Xəta baş verdi." } });
-  });
+    res.status(400).json({ errors: { global: "Xəta baş verdi." } });
+    });
 
-});
+    });
 
 const saveFinData = (fin, finData, calcack) => {  
   db.fin_data.findOne({attributes:['fin'], where:{fin}}).then(check_fin => {
-    if (!check_fin) { 
-      db.fin_data.create({ ...finData, fin }).then(fin_dat => {
-        if (fin_dat.error) {
-          calcack({ error: fin_dat.error });
-          //console.log("fin_data_insert_error", user.error);
-        } else {
-          calcack({ error: false });
-        }
-      });
-    } else { 
-      db.fin_data.update(finData, {where:{ fin }}).then(fin_dat => {
-        if (fin_dat.error) {
-          calcack({ error: fin_dat.error });
-          //console.log("fin_data_insert_error", user.error);
-        } else {
-          calcack({ error: false });
-        }
-      });
-    }
+  if (!check_fin) { 
+  db.fin_data.create({ ...finData, fin }).then(fin_dat => {
+  if (fin_dat.error) {
+  calcack({ error: fin_dat.error });
+  //console.log("fin_data_insert_error", user.error);
+  } else {
+  calcack({ error: false });
+  }
   });
-}
+  } else { 
+  db.fin_data.update(finData, {where:{ fin }}).then(fin_dat => {
+  if (fin_dat.error) {
+  calcack({ error: fin_dat.error });
+  //console.log("fin_data_insert_error", user.error);
+  } else {
+  calcack({ error: false });
+  }
+  });
+  }
+  });
+  }
 
 
 const getSoapFindata = (pin) => {
   return new Promise(function (resolve, reject) {
-    soap.createClient(process.env.IAMAS_URL, { wsdl_options: { timeout: 8000 } }, (err, client) => {
-      if (client) {
-        client.getPersonalInfoByPinNew({ pin }, (err2, result3) => {
-          if (result3 && result3["getPersonalInfoByPinNewResult"] && !result3["getPersonalInfoByPinNewResult"].faultCode) {
-            resolve({
-              first_name: result3["getPersonalInfoByPinNewResult"].Name || "-",
-              last_name: result3["getPersonalInfoByPinNewResult"].Surname || "-",
-              father_name: result3["getPersonalInfoByPinNewResult"].Patronymic || "-",
-              district: result3["getPersonalInfoByPinNewResult"]["BirthPlace"].city,
-              birth_date: result3["getPersonalInfoByPinNewResult"].birthDate || "-",
-              born_country: result3["getPersonalInfoByPinNewResult"]["BirthPlace"].country,
-              citizenship: result3["getPersonalInfoByPinNewResult"].citizenship,
-              address: result3["getPersonalInfoByPinNewResult"]["Adress"].place,
-              exp_date: result3["getPersonalInfoByPinNewResult"].expdate,
-              gender: result3["getPersonalInfoByPinNewResult"].gender,
-              giving_date: result3["getPersonalInfoByPinNewResult"].issueDate,
-              giving_authority: result3["getPersonalInfoByPinNewResult"].policedept,
-              image: result3["getPersonalInfoByPinNewResult"].photo ? `data:image/jpeg;base64,${result3["getPersonalInfoByPinNewResult"].photo}` : null,
-              series: result3["getPersonalInfoByPinNewResult"].Seria,
-              number: result3["getPersonalInfoByPinNewResult"].series,
-              social_status: result3["getPersonalInfoByPinNewResult"].sosialStatus
-            });
-          } else {
-            reject(null);
-          }
-
-        }, { timeout: 8000 });
-      } else {
-        reject(null);
-      }
-    });
+  soap.createClient(process.env.IAMAS_URL, { wsdl_options: { timeout: 8000 } }, (err, client) => {
+  if (client) {
+  client.getPersonalInfoByPinNew({ pin }, (err2, result3) => {
+  if (result3 && result3["getPersonalInfoByPinNewResult"] && !result3["getPersonalInfoByPinNewResult"].faultCode) {
+  resolve({
+  first_name: result3["getPersonalInfoByPinNewResult"].Name || "-",
+  last_name: result3["getPersonalInfoByPinNewResult"].Surname || "-",
+  father_name: result3["getPersonalInfoByPinNewResult"].Patronymic || "-",
+  district: result3["getPersonalInfoByPinNewResult"]["BirthPlace"].city,
+  birth_date: result3["getPersonalInfoByPinNewResult"].birthDate || "-",
+  born_country: result3["getPersonalInfoByPinNewResult"]["BirthPlace"].country,
+  citizenship: result3["getPersonalInfoByPinNewResult"].citizenship,
+  address: result3["getPersonalInfoByPinNewResult"]["Adress"].place,
+  exp_date: result3["getPersonalInfoByPinNewResult"].expdate,
+  gender: result3["getPersonalInfoByPinNewResult"].gender,
+  giving_date: result3["getPersonalInfoByPinNewResult"].issueDate,
+  giving_authority: result3["getPersonalInfoByPinNewResult"].policedept,
+  image: result3["getPersonalInfoByPinNewResult"].photo ? `data:image/jpeg;base64,${result3["getPersonalInfoByPinNewResult"].photo}` : null,
+  series: result3["getPersonalInfoByPinNewResult"].Seria,
+  number: result3["getPersonalInfoByPinNewResult"].series,
+  social_status: result3["getPersonalInfoByPinNewResult"].sosialStatus
   });
-}
+  } else {
+  reject(null);
+  }
+
+  }, { timeout: 8000 });
+  } else {
+  reject(null);
+  }
+  });
+  });
+  }
 
 module.exports = router;

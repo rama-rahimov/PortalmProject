@@ -10,40 +10,40 @@ router.get('/getUser/:fin', authenticate, (req, res) => {
   const { fin } = req.params;
   const isAdmin = Number(req.currentUser.role) === 10 ; 
   if (isAdmin) { 
-    db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{fin}, include:[{model:db.fin_data, required:false}]}).then(async user => {
-    const child = await db.children.findOne({where:{fin}});
-    if(!child){
-      await db.children.create({fin, user_id:user.id, type: 2});
-    }
-     await db.fin_data.update({children_fin:fin}, {where:{fin}});
-      db.children.findOne({where:{fin, deleted:0}, include:[{model:db.fin_data, required:false}]}).then(children => {
-        if (children && children.user_id == (user || {}).id) 
-          db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{id:children.user_id}, include:[{model:db.fin_data, required: false}]}).then(children_user => {
-            res.json({ user: user ? toAuthJSON(user) : null, children, children_user: children_user ? toAuthJSON(children_user) : null });
-          });
-        else
-          res.json({ user: user ? toAuthJSON(user) : null, children, children_user: null });
-      });
-    });
-  } else {
-    res.status(401).json({ errors: { global: "Token not correct" } });
+  db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{fin}, include:[{model:db.fin_data, required:false}]}).then(async user => {
+  const child = await db.children.findOne({where:{fin}});
+  if(!child){
+  await db.children.create({fin, user_id:user.id, type: 2});
   }
-});
+  await db.fin_data.update({children_fin:fin}, {where:{fin}});
+  db.children.findOne({where:{fin, deleted:0}, include:[{model:db.fin_data, required:false}]}).then(children => {
+  if (children && children.user_id == (user || {}).id) 
+  db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{id:children.user_id}, include:[{model:db.fin_data, required: false}]}).then(children_user => {
+  res.json({ user: user ? toAuthJSON(user) : null, children, children_user: children_user ? toAuthJSON(children_user) : null });
+  });
+  else
+  res.json({ user: user ? toAuthJSON(user) : null, children, children_user: null });
+  });
+  });
+  } else {
+  res.status(401).json({ errors: { global: "Token not correct" } });
+  }
+  });
 
 router.post('/report_services', authenticate, async (req, res) => {
   let { startDate, endDate, service_id } = req.body;
   const isAdmin = Number(req.currentUser.role) === 10
   if (isAdmin) {
-    let where = '';
-    if (!startDate) {
-      startDate = '2000-01-01 00:00:00' ;
-    }
-    if (!endDate) {
-      startDate = '2200-01-01 00:00:00' ;
-    }
-    if (service_id) {
-      where = 'where t1.service_id=?' ;
-    }
+  let where = '';
+  if (!startDate) {
+  startDate = '2000-01-01 00:00:00' ;
+  }
+  if (!endDate) {
+  startDate = '2200-01-01 00:00:00' ;
+  }
+  if (service_id) {
+  where = 'where t1.service_id=?' ;
+  }
 
 //   const eee = await E_documents_apply.findAll({attributes:[[Sequelize.fn("COUNT", Sequelize.col("id")),
 //   "count"]], where:{status:{[Op.ne]:0}, update_date:{[Op.gte]:startDate}, update_date:{[Op.lte]:endDate}}}) ; 
@@ -79,8 +79,6 @@ router.post('/report_services', authenticate, async (req, res) => {
 //     return res.json(sum) ;
 //   }
 
-
-
     querySyncForMap(`SELECT t1.*,t2.title FROM (
         SELECT COUNT(ID) AS count, 16 AS service_id FROM e_documents_apply WHERE STATUS!=0 AND update_date >=? AND  update_date<=?
         UNION ALL
@@ -109,9 +107,9 @@ router.post('/report_services', authenticate, async (req, res) => {
         res.json(result);
       });
   } else {
-    res.status(401).json({ errors: { global: "Token not correct" } });
+  res.status(401).json({ errors: { global: "Token not correct" } });
   }
-});
+  });
 
 
 router.post('/email_update', authenticate, (req, res) => {
@@ -119,26 +117,26 @@ router.post('/email_update', authenticate, (req, res) => {
   const { email, fin, description } = req.body;
   const isAdmin = Number(req.currentUser.role) === 10;
   if (isAdmin) { 
-    db.users.findOne({where:{fin}}).then((check) => {
-      if (check)   
-        db.users.findOne({attributes:[[db.sequelize.fn('COUNT', Sequelize.col('id')), 'count']], where:{email}}).then(u => {
-          if (u.count == 0) 
-            db.users.update({email}, {where:{fin}}).then(() => {
-              //admin_update_log 
-              insert('admin_update_log', { old: check.email, new: email, fin, description, user_id: req.currentUser.id }, () => {
-                res.json({ message: !isEng ? 'E-poçt uğurla dəyişdirildi!' : 'Email changed successfully!' });
-              });
-            });
-          else
-            res.json({ err: !isEng ? 'E-poçt istifadə edilir' : 'Email is used', message: '' });
-        });
-      else
-        res.json({ err: !isEng ? "İstifadəçi tapılmadı" : "User not found", message: '' })
-    });
+  db.users.findOne({where:{fin}}).then((check) => {
+  if (check)   
+  db.users.findOne({attributes:[[db.sequelize.fn('COUNT', Sequelize.col('id')), 'count']], where:{email}}).then(u => {
+  if (u.count == 0) 
+  db.users.update({email}, {where:{fin}}).then(() => {
+  //admin_update_log 
+  insert('admin_update_log', { old: check.email, new: email, fin, description, user_id: req.currentUser.id }, () => {
+  res.json({ message: !isEng ? 'E-poçt uğurla dəyişdirildi!' : 'Email changed successfully!' });
+  });
+  });
+  else
+  res.json({ err: !isEng ? 'E-poçt istifadə edilir' : 'Email is used', message: '' });
+  });
+  else
+  res.json({ err: !isEng ? "İstifadəçi tapılmadı" : "User not found", message: '' })
+  });
   } else {
-    res.json({ err: "Non correct token" });
+  res.json({ err: "Non correct token" });
   }
-});
+  });
 
 router.post('/phone_update', authenticate, (req, res) => {
   const isEng = (req.headers.language || "") === "en";
@@ -146,25 +144,26 @@ router.post('/phone_update', authenticate, (req, res) => {
   const isAdmin = Number(req.currentUser.role) === 10;
   if (isAdmin) { 
 
-    db.users.findOne({where:{fin}}).then((check) => { 
-      if (check) 
-        db.users.findOne({attributes:[[db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']], where:{phone, country_code}}).then(u => {
-          if (u.count == 0) 
-            db.users.update({phone, country_code}, {where:{fin}}).then(() => { 
-              //admin_update_log
-              insert('admin_update_log', { old: (check.country_code + '-' + check.phone), new: (country_code + '-' + phone), fin, description, user_id: req.currentUser.id }, () => {
-                res.json({ message: !isEng ? 'nomre uğurla dəyişdirildi!' : 'Phone changed successfully!' });
-              });
-            });
-          else
-            res.json({ err: !isEng ? 'nomre istifadə edilir' : 'Phone is used', message: '' });
-        });
-      else
-        res.json({ err: !isEng ? "İstifadəçi tapılmadı" : "User not found", message: '' })
-    });
+  db.users.findOne({where:{fin}}).then((check) => { 
+  if (check) 
+  db.users.findOne({attributes:[[db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']], where:{phone, country_code}}).then(u => {
+  if (u.count == 0) 
+  db.users.update({phone, country_code}, {where:{fin}}).then(() => { 
+  //admin_update_log
+  insert('admin_update_log', { old: (check.country_code + '-' + check.phone), new: (country_code + '-' + phone), fin, 
+  description, user_id: req.currentUser.id }, () => {
+  res.json({ message: !isEng ? 'nomre uğurla dəyişdirildi!' : 'Phone changed successfully!' });
+  });
+  });
+  else
+  res.json({ err: !isEng ? 'nomre istifadə edilir' : 'Phone is used', message: '' });
+  });
+  else
+  res.json({ err: !isEng ? "İstifadəçi tapılmadı" : "User not found", message: '' })
+  });
   } else {
-    res.json({ err: "Non correct token" });
+  res.json({ err: "Non correct token" });
   }
-});
+  });
 
 module.exports = router;

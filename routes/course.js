@@ -88,17 +88,16 @@ router.get('/re-apply', authenticate, (req, res) => {
 router.get('/all/educations/:fin', authenticate, (req, res) => {
     const slug = "/api/main/alleducations/" + req.params.fin
     axios.get(process.env.VACANCIES_HOST + slug, {
-        headers: {
-            authorization: "Bearer " + process.env.VACANCIES_TOKEN
-        }
+    headers: {
+    authorization: "Bearer " + process.env.VACANCIES_TOKEN
+    }
     }).then(({ data }) => {
-        res.json(data);
+    res.json(data);
     }).catch((error) => {
-
-        console.log(error);
-        res.json({});
+    console.log(error);
+    res.json({});
     });
-});
+    });
 
 
 /**
@@ -134,7 +133,7 @@ router.get('/by_id/:id', authenticate, (req, res) => {
     });  });  });  });  });
     } else {
     res.json({
-        success: false
+    success: false
     }); } }); });
 
 
@@ -153,35 +152,35 @@ router.get('/opencourse/applications/', authenticate, async (req, res) => {
     const csId = await db.course_appeals.findAll({attributes:['user_id']}) ;
     let obCsId = [] ;
     for (let i = 0; i < csId.length; i++) {
-        obCsId.push(csId[i].user_id);
+    obCsId.push(csId[i].user_id);
     }
 
     const like = {status :{[Op.gte]:1}, user_id:obCsId} ;
 
     if (req.query.enterprises_id) {
-        like.enterprises_id = req.query.enterprises_id ;
+    like.enterprises_id = req.query.enterprises_id ;
     }
     if (req.query.corpus_id) {
-        like.corpus_id = req.query.corpus_id ;
+    like.corpus_id = req.query.corpus_id ;
     }
     if (req.query.course_id) {
-        like.course_id = req.query.course_id ;
+    like.course_id = req.query.course_id ;
     }
     if (req.query.specialty_id) {
-        like.specialty_code = req.query.specialty_id ;
+    like.specialty_code = req.query.specialty_id ;
     }
     if (req.query.status) {
-        like.status = req.query.status ;
+    like.status = req.query.status ;
     }
     if (req.query.name) {
-        like.name = {[Op.substring]:req.query.name} ;
+    like.name = {[Op.substring]:req.query.name} ;
     }
     let checkData = `LIMIT ${limit} OFFSET ${offset}`;
     if (req.query.forexport) {
-        checkData = '';
+    checkData = '';
     }
     if (req.query.financing) {
-        like.financing = req.query.financing ;
+    like.financing = req.query.financing ;
     }
     // order by id desc
 
@@ -192,9 +191,9 @@ router.get('/opencourse/applications/', authenticate, async (req, res) => {
      "phone", "borncity"], include:[{model:db.appealed_courses, required:true, attributes:["id", "end_date",
       "enterprises_name", "corpus_name", "amount", "specialty_name", "oc_direction_name", "course_id",
     ["name", "course_name"], "status"], where:like}]}).then(data => {
-        res.json(data);
+    res.json(data);
     });
-});
+    });
 
 
 router.get('/opencourse/applications/:id', authenticate, async (req, res, next) => {
@@ -204,7 +203,7 @@ router.get('/opencourse/applications/:id', authenticate, async (req, res, next) 
     const csId = await db.course_appeals.findAll({attributes:['user_id']}) ;
     let obCsId = [] ;
     for (let i = 0; i < csId.length; i++) {
-        obCsId.push(csId[i].user_id) ;
+    obCsId.push(csId[i].user_id) ;
     }
 
     const like = {status :{[Op.gte]:1}, user_id:obCsId, enterprises_id} ;
@@ -229,9 +228,9 @@ router.get('/opencourse/applications/:id', authenticate, async (req, res, next) 
     'oc_direction_name', 'course_id', ['name', 'course_name'], 'status'], where:like}]});
 
     sql.then(data => {
-        res.json(data);
+    res.json(data);
     });
-});
+    });
 
 
 /**
@@ -344,9 +343,9 @@ router.post('/save', authenticate, (req, res) => {
     console.log('nn', nn);
     arsc++ ;
     if (arsc === ars.length)
-        resultCount++;
+    resultCount++;
     if (resultCount === 6) {
-        resolve(true);
+    resolve(true);
     }
     }) }) }) }) } }) ;
                         
@@ -403,77 +402,77 @@ function saveApply(status, step, dataForm, user_id, callback) {
     if (course_appeals) {
     if (Number(user_id) !== Number(course_appeals.user_id)) {
     callback({
-        error: 'Invailid user_id'
+    error: 'Invailid user_id'
     });
     } else {
     db.course_appeals.update({status,
-        step,
-        country,
-        fin,
-        citizenship,
-        first_name,
-        last_name,
-        father_name,
-        birth_date,
-        borncity,
-        address,
-        phone,
-        email,
-        actual_address,
-        is_address_current,
-        genderId,
-        position_type,
-        country_code,
-        actual_region,
-        lang,
-        lang_other_text,
-        training_date,
-        training_about,
-        training_about_text,
-        dq_point,
-        miq_point,
-        militaryService,
-        social_scan,
-        social_status,
-        training_motivation}, {
-        where:{id: course_appeals.id}}).then(course_appeals_update => {
-        if (course_appeals_update.error) {
-        callback({
-        error: course_appeals_update.error
-        });
-        } else {
-        callback({
-        id: course_appeals.id }) } }) } } else {
-        db.course_appeals.create({ user_id,
-        status,
-        step,
-        country,
-        fin,
-        citizenship,
-        first_name,
-        last_name,
-        father_name,
-        birth_date,
-        borncity,
-        address,
-        phone,
-        email,
-        actual_address,
-        is_address_current,
-        genderId,
-        position_type,
-        country_code,
-        actual_region,
-        lang,
-        lang_other_text,
-        training_date,
-        training_about,
-        training_about_text,
-        dq_point,
-        miq_point,
-        militaryService,
-        social_scan,
-        social_status,
-        training_motivation}).then(applyId => {
-        if (applyId.error) { callback({  error: applyId.error  });
-        } else { callback({ id: applyId }) } })  } }) }
+    step,
+    country,
+    fin,
+    citizenship,
+    first_name,
+    last_name,
+    father_name,
+    birth_date,
+    borncity,
+    address,
+    phone,
+    email,
+    actual_address,
+    is_address_current,
+    genderId,
+    position_type,
+    country_code,
+    actual_region,
+    lang,
+    lang_other_text,
+    training_date,
+    training_about,
+    training_about_text,
+    dq_point,
+    miq_point,
+    militaryService,
+    social_scan,
+    social_status,
+    training_motivation }, {
+    where:{id: course_appeals.id}}).then(course_appeals_update => {
+    if (course_appeals_update.error) {
+    callback({
+    error: course_appeals_update.error
+    });
+    } else {
+    callback({
+    id: course_appeals.id }) } }) } } else {
+    db.course_appeals.create({ user_id,
+    status,
+    step,
+    country,
+    fin,
+    citizenship,
+    first_name,
+    last_name,
+    father_name,
+    birth_date,
+    borncity,
+    address,
+    phone,
+    email,
+    actual_address,
+    is_address_current,
+    genderId,
+    position_type,
+    country_code,
+    actual_region,
+    lang,
+    lang_other_text,
+    training_date,
+    training_about,
+    training_about_text,
+    dq_point,
+    miq_point,
+    militaryService,
+    social_scan,
+    social_status,
+    training_motivation}).then(applyId => {
+    if (applyId.error) { callback({  error: applyId.error  });
+    } else { callback({ id: applyId }) } })  } }) } 

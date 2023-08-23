@@ -32,34 +32,34 @@ router.get('/test', (req, res) => {
 router.get('/test/:fin/:edu_level/:entranceYear/:direction', (req, res) => {
     const { edu_level, fin, entranceYear, direction } = req.params;
     const data = {
-        fin,
-        entranceYear,
-        educationLevelId: edu_level,
-        educationStageId: Number(direction) === 2 ? 2 : 1
+    fin,
+    entranceYear,
+    educationLevelId: edu_level,
+    educationStageId: Number(direction) === 2 ? 2 : 1
     };
     getAtisData(data, (result) => {
-        if (result && result.data && result.data.studentInfo && result.data.studentInfo[0]) {
-            const data = result.data.studentInfo[0];
-            res.json({
-                country: 'AZƏRBAYCAN',
-                // edu_level: data.educationLevel,
-                specialty: data.specialty,
-                educationForm: data.educationForm,
-                paymentType: data.paymentType,
-                entranceYear: data.entranceYear,
-                course: data.course,
-                region: data.region,///???
-                grade: data.grade,///???
-                educationLanguage: data.educationLanguage,
-                edu_duration: data.educationDuration,
-                edu_institution: data.institution,
-            })
-
-        } else {
-            res.json({});
-        }
+    if (result && result.data && result.data.studentInfo && result.data.studentInfo[0]) {
+    const data = result.data.studentInfo[0];
+    res.json({
+    country: 'AZƏRBAYCAN',
+    // edu_level: data.educationLevel,
+    specialty: data.specialty,
+    educationForm: data.educationForm,
+    paymentType: data.paymentType,
+    entranceYear: data.entranceYear,
+    course: data.course,
+    region: data.region,///???
+    grade: data.grade,///???
+    educationLanguage: data.educationLanguage,
+    edu_duration: data.educationDuration,
+    edu_institution: data.institution,
     })
-});
+
+    } else {
+    res.json({});
+    }
+    })
+    });
 
 
 router.get('/statistika/:p', async (req, res) => {
@@ -71,40 +71,40 @@ router.get('/statistika/:p', async (req, res) => {
     let extraString = [ 'edu_level', 'document_purpose', 'entranceYear', 'direction', [db.sequelize.fn("COUNT", Sequelize.col("id")), 'count']] ;
 
     if (date.split('.').length === 1) {
-        date = String(new Date().getYear() + 1900).substring(2, 4) + '.' + String(new Date().getMonth() + 1001).substring(2, 4) + '.' + date;
+    date = String(new Date().getYear() + 1900).substring(2, 4) + '.' + String(new Date().getMonth() + 1001).substring(2, 4) + '.' + date;
     } else if (date.split('.').length === 2) {
-        date = String(new Date().getYear() + 1900).substring(2, 4) + '.' + date;
+    date = String(new Date().getYear() + 1900).substring(2, 4) + '.' + date;
     } else {
-        date = date.split('.').slice(0, 3).join('.');
-    }
+    date = date.split('.').slice(0, 3).join('.');
+    
 
     if (endDate) {
-        if (endDate.split('.').length === 1) {
-            endDate = String(new Date().getYear() + 1900).substring(2, 4) + '.' + String(new Date().getMonth() + 1001).substring(2, 4) + '.' + endDate;
-        } else if (endDate.split('.').length === 2) {
-            endDate = String(new Date().getYear() + 1900).substring(2, 4) + '.' + endDate;
-        } else {
-            endDate = endDate.split('.').slice(0, 3).join('.');
-        }
-        let endDateChan = 20 + endDate.replaceAll('.', '-') + ' 23:59:59'  ;
-        endWhere.update_date =  {[Op.lt]:endDateChan} ;
+    if (endDate.split('.').length === 1) {
+    endDate = String(new Date().getYear() + 1900).substring(2, 4) + '.' + String(new Date().getMonth() + 1001).substring(2, 4) + '.' + endDate;
+    } else if (endDate.split('.').length === 2) {
+    endDate = String(new Date().getYear() + 1900).substring(2, 4) + '.' + endDate;
+    } else {
+    endDate = endDate.split('.').slice(0, 3).join('.');
+    }
+    let endDateChan = 20 + endDate.replaceAll('.', '-') + ' 23:59:59'  ;
+    endWhere.update_date =  {[Op.lt]:endDateChan} ;
     }
 
     if (exclude) {
-        if (exclude.includes('eduLevel')) {
-            extraString.splice(0,0) ;
-        }
-        if (exclude.includes('entranceYear')) {
-            extraString.splice(2, 2);
-        }
-        if (exclude.includes('purpose')) {
-            extraString.splice(1, 1); 
-        }
+    if (exclude.includes('eduLevel')) {
+    extraString.splice(0,0) ;
+    }
+    if (exclude.includes('entranceYear')) {
+    extraString.splice(2, 2);
+    }
+    if (exclude.includes('purpose')) {
+    extraString.splice(1, 1); 
+    }
     }
 
     //console.log("SELECT direction" + extraString + ", count(id) AS count FROM e_documents_apply WHERE update_date >'20" + date.replace('.', '-') + " 00:00:00' " + endWhere + " AND STATUS=3 GROUP BY direction" + extraString);
     db.e_documents_apply.findAll({attributes:extraString, where:endWhere, group:['direction']}).then(result => {
-        let response = `<html>
+    let response = `<html>
 <head>
 <style>
 table {
@@ -146,138 +146,154 @@ tr:nth-child(even) {
 </body>
 </html>`;
 
-        res.send(response);
+    res.send(response);
 
-        /*res.json((result || []).map((r) => ({
-            'İstiqamət': (_.find(directions, (e) => e.id === Number(r.direction)) || { name: '' }).name,
-            'Təyinatı': (_.find(document_purposes, (e) => e.id === Number(r.document_purpose)) || { name: '' }).name,
-            'Təhsil səviyyəsi': Number(r.direction) !== 5 ? (_.find(eduLevels, (e) => e.id === Number(r.edu_level) && e.direction === Number(r.direction)) || { name: '' }).name : '' ,
-            'Qəbul ili': ![2, 4].includes(Number(r.direction)) ? '' : r.entranceYear,
-            'say': r.count
-        })));*/
+    /*res.json((result || []).map((r) => ({
+    'İstiqamət': (_.find(directions, (e) => e.id === Number(r.direction)) || { name: '' }).name,
+    'Təyinatı': (_.find(document_purposes, (e) => e.id === Number(r.document_purpose)) || { name: '' }).name,
+    'Təhsil səviyyəsi': Number(r.direction) !== 5 ? (_.find(eduLevels, (e) => e.id === Number(r.edu_level) && e.direction === Number(r.direction)) || { name: '' }).name : '' ,
+    'Qəbul ili': ![2, 4].includes(Number(r.direction)) ? '' : r.entranceYear,
+    'say': r.count
+    })));*/
     });
-});
+    }});
 
 router.post('/getReferenceData', authenticate, async (req, res) => {
     const { document_purpose, edu_level, direction, entranceYear, readOnly, id } = req.body;
     let check_sql = '' ;
     let check_sql_array = [];  
-   switch (Number(direction)) {                                                                                                                               
-        case 1:
-            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count'], [db.sequelize.fn("SUM", db.sequelize.literal(`CASE WHEN status < 2 THEN 1 ELSE 0 END`)), 'status_count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, {status:{[Op.ne]:2}},{[Op.or]:[db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL ${Number(document_purpose === 1 ? 30 : 3000)} DAY`)< db.sequelize.fn("NOW"))), {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-            break;
-        case 2:  
-            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
-            break;
-        case 3:  
-            check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-            break;
-        case 4:  
-            check_sql =   db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-            break;
-        case 5:        
-            check_sql = db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear:{[Op.is]:null}}, db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-            break;
+    switch (Number(direction)) {                                                                                                                               
+    case 1:
+    check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count'], 
+    [db.sequelize.fn("SUM", db.sequelize.literal(`CASE WHEN status < 2 THEN 1 ELSE 0 END`)), 'status_count']], 
+    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, 
+    {status:{[Op.ne]:2}},{[Op.or]:[db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
+    db.sequelize.literal(`INTERVAL ${Number(document_purpose === 1 ? 30 : 3000)} DAY`)< db.sequelize.fn("NOW"))), 
+    {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+    break;
+    case 2:  
+    check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
+    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, 
+    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), 
+    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
+    break;
+    case 3:  
+    check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
+    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, 
+    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), 
+    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+    break;
+    case 4:  
+    check_sql =   db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
+    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear}, 
+    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), 
+    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+    break;
+    case 5:        
+    check_sql = db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
+    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear:{[Op.is]:null}}, 
+    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), 
+    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+    break;
     }
    
   
-
     check_sql.then(check => {
-        if ((Number((check || {}).count) === 0 || readOnly) && (!id || check)) {
-            if (Number(direction) === 1) {
-                sendRequest({
-                    RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
-                    /* StatusCode: 1,
-                     EducationLevelCode: 7,
-                     PIN: '5HMC722'*/
-                    StatusCode: document_purpose,
-                    EducationLevelCode: edu_level,
-                    PIN: req.currentUser.fin 
-                }, 'GetInfoByPIN', (r) => {
-                    if ((((((r.result || {}).GetInfoByPINResult || {}).ResponseDetails || {}).ResponseDetail || [])[0] || {}).Name) {
-                        const data = r.result.GetInfoByPINResult.ResponseDetails.ResponseDetail[0];
-                        res.json({
-                            program: (_.find(programs, (e) => e.id === Number(data.Program)) || { name: '' }).name,
-                            PrivateCode: data.PrivateCode,
-                            edu_institution: data.UniversitetName,
-                            country: data.CountryName,
-                            specialty: data.SpecialtyName,
-                            edu_duration: (data.StartDate && data.StartDate.getFullYear() || "") + '-' + (data.GraduateDate && data.GraduateDate.getFullYear() || "")
-                        });
-                    } else {
-                        res.json({});
-                    }
-                });
-            } else if ([2, 4].includes(Number(direction))) {
-                getAtisData({
-                    fin: req.currentUser.fin,
-                    entranceYear,
-                    educationLevelId: edu_level,
-                    educationStageId: Number(direction) === 2 ? 2 : 1
-                }, (result) => {
-                    if (result && result.data && result.data.studentInfo && result.data.studentInfo[0]) {
-                        const data = result.data.studentInfo[0];
-                        res.json({
-                            country: 'AZƏRBAYCAN',
-                            // edu_level: data.educationLevel,
-                            specialty: data.specialty,
-                            educationForm: data.educationForm,
-                            paymentType: data.paymentType,
-                            entranceYear: data.entranceYear,
-                            course: data.course,
-                            region: data.region,///???
-                            grade: data.grade,///???
-                            educationLanguage: data.educationLanguage,
-                            edu_duration: data.educationDuration,
-                            edu_institution: data.institution,
-                        })
-
-                    } else {
-                        res.json({});
-                    }
-                })
-            } else if (Number(direction) === 3) {
-                getPTSData({
-                    fin: req.currentUser.fin,
-                    education_level: edu_level,
-                    type: Number(document_purpose) === 1 ? 1 : 2
-                }, (result) => {
-                    if (((result || {}).data || {}).success) {
-                        const data = result.data.studentinfo;
-                        res.json({
-                            country: 'AZƏRBAYCAN',
-                            //  edu_level: data.education_level_name,
-                            specialty: data.specialty_name,
-                            educationForm: data.education_form,
-                            paymentType: data.tuition,
-                            entranceYear: data.admission_year,
-                            course: data.course,
-                            educationLanguage: data.teaching_language_name,
-                            edu_duration: data.education_duration_name,
-                            edu_institution: data.enterprises_name,
-                        })
-                    } else {
-                        res.json({});
-                    }
-                })
-            } else if (Number(direction) === 5) {
-                getExamData({
-                    fin: req.currentUser.fin,
-                }, (result) => {
-                    if ((((result || {}).data || {}).data || [])[0]) {
-                        res.json({ exam_datas: result.data.data })
-                    } else {
-                        res.json({});
-                    }
-                })
-            }
-            else
-                res.json({});
-        } else {
-            res.json({ count: Number((check || {}).count), status_count: Number((check || {}).status_count) });
-        }
+    if ((Number((check || {}).count) === 0 || readOnly) && (!id || check)) {
+    if (Number(direction) === 1) {
+    sendRequest({
+    RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
+    /* StatusCode: 1,
+    EducationLevelCode: 7,
+    PIN: '5HMC722'*/
+    StatusCode: document_purpose,
+    EducationLevelCode: edu_level,
+    PIN: req.currentUser.fin 
+    }, 'GetInfoByPIN', (r) => {
+    if ((((((r.result || {}).GetInfoByPINResult || {}).ResponseDetails || {}).ResponseDetail || [])[0] || {}).Name) {
+    const data = r.result.GetInfoByPINResult.ResponseDetails.ResponseDetail[0];
+    res.json({
+    program: (_.find(programs, (e) => e.id === Number(data.Program)) || { name: '' }).name,
+    PrivateCode: data.PrivateCode,
+    edu_institution: data.UniversitetName,
+    country: data.CountryName,
+    specialty: data.SpecialtyName,
+    edu_duration: (data.StartDate && data.StartDate.getFullYear() || "") + '-' + (data.GraduateDate && data.GraduateDate.getFullYear() || "")
     });
-});
+    } else {
+    res.json({});
+    }
+    });
+    } else if ([2, 4].includes(Number(direction))) {
+    getAtisData({
+    fin: req.currentUser.fin,
+    entranceYear,
+    educationLevelId: edu_level,
+    educationStageId: Number(direction) === 2 ? 2 : 1
+    }, (result) => {
+    if (result && result.data && result.data.studentInfo && result.data.studentInfo[0]) {
+    const data = result.data.studentInfo[0];
+    res.json({
+    country: 'AZƏRBAYCAN',
+    // edu_level: data.educationLevel,
+    specialty: data.specialty,
+    educationForm: data.educationForm,
+    paymentType: data.paymentType,
+    entranceYear: data.entranceYear,
+    course: data.course,
+    region: data.region,///???
+    grade: data.grade,///???
+    educationLanguage: data.educationLanguage,
+    edu_duration: data.educationDuration,
+    edu_institution: data.institution,
+    })
+
+    } else {
+    res.json({});
+    }
+    })
+    } else if (Number(direction) === 3) {
+    getPTSData({
+    fin: req.currentUser.fin,
+    education_level: edu_level,
+    type: Number(document_purpose) === 1 ? 1 : 2
+    }, (result) => {
+    if (((result || {}).data || {}).success) {
+    const data = result.data.studentinfo;
+    res.json({
+    country: 'AZƏRBAYCAN',
+    //  edu_level: data.education_level_name,
+    specialty: data.specialty_name,
+    educationForm: data.education_form,
+    paymentType: data.tuition,
+    entranceYear: data.admission_year,
+    course: data.course,
+    educationLanguage: data.teaching_language_name,
+    edu_duration: data.education_duration_name,
+    edu_institution: data.enterprises_name,
+    })
+    } else {
+    res.json({});
+    }
+    })
+    } else if (Number(direction) === 5) {
+    getExamData({
+    fin: req.currentUser.fin,
+    }, (result) => {
+    if ((((result || {}).data || {}).data || [])[0]) {
+    res.json({ exam_datas: result.data.data })
+    } else {
+    res.json({});
+    }
+    })
+    }
+    else
+    res.json({});
+    } else {
+    res.json({ count: Number((check || {}).count), status_count: Number((check || {}).status_count) });
+    }
+    });
+    });
 
 /**
  * @api {get} /e-reference/all
@@ -377,7 +393,7 @@ router.post('/save', authenticate, (req, res) => {
     const { certificates } = dataForm;
 
     saveApply(0, step, dataForm, req.currentUser.id, (result) => {
-        //console.log('save end ', result)
+    //console.log('save end ', result)
 
     if (result.id)  
     db.e_document_files.destroy({where:{e_documents_apply_id:result.id}}).then(() => {
@@ -507,14 +523,16 @@ function sendData(status, dataForm, id, callback) {
     }
     else { 
     db.notifications.destroy({where:{service:"reference", fin:id, title:0}}).then(() => {
-    db.notifications.create({service: 'reference', fin: id, title: 0, description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: ""}).then(() => {
+    db.notifications.create({service: 'reference', fin: id, title: 0, 
+    description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: ""}).then(() => {
     callback(false);
     }
     )});
     }
     } else {  
     db.notifications.destroy({where:{service:"reference", fin:id, title:0}}).then(() => {
-    db.notifications.create({service: 'reference', fin: id, title: 0, description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
+    db.notifications.create({service: 'reference', fin: id, title: 0, 
+    description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
     callback(true);
     }
     )});
@@ -523,7 +541,8 @@ function sendData(status, dataForm, id, callback) {
 
 const updateStatus = (id, docNo, callback, status = 3) => {
     db.notifications.destroy({where:{service:"reference", fin:id, title:(docNo ? 1 : 0)}}).then(() => {
-    db.notifications.create({service: 'reference', fin: id, title: !!docNo ? 1 : 0, description: !!docNo ? 'Sizin müraciətiniz qeydə alınmışdır.' : 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
+    db.notifications.create({service: 'reference', fin: id, title: !!docNo ? 1 : 0, description: !!docNo ? 'Sizin müraciətiniz qeydə alınmışdır.' 
+    : 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
     if (docNo) { 
     db.e_documents_apply.update({ status, docNo: status === 1 ? null : docNo },{where:{ id }}).then(() => {
     callback(true);
@@ -563,7 +582,8 @@ const getAtisData = (data, callback) => {
     //console.log(`${process.env.ATIS_HOST}/api/student/info?fin=${/*data.fin*/fins[Number(data.educationLevelId || 0)]}${data.entranceYear ? '&EntranceYear=' + data.entranceYear : ''}${data.educationLevelId ? '&EducationLevelId=' + data.educationLevelId : ''}${data.educationStageId ? '&EducationStageId=' + data.educationStageId : ''}`);
     atisLogin((token) => {
     if (token) {
-    axios.post(`${process.env.ATIS_HOST}/api/student/info`, { Fin: data.fin, EntranceYear: data.entranceYear || '', EducationLevelId: data.educationLevelId || '', EducationStageId: data.educationStageId || '' }, {
+    axios.post(`${process.env.ATIS_HOST}/api/student/info`, { Fin: data.fin, EntranceYear: data.entranceYear || '', 
+    EducationLevelId: data.educationLevelId || '', EducationStageId: data.educationStageId || '' }, {
     headers: {
     'Authorization': 'Bearer ' + token
     }
@@ -644,26 +664,26 @@ function makeid(length) {
 
 const atisLogin = (callback) => {
     const postData = querystring.stringify({
-        'UserName': 'EDUMedia0508',
-        'Password': 'n)/m<ySRNs7Af38n',
-        'SecretKey': 'AtisI#_EB-R$T]2EKG!Key'
+    'UserName': 'EDUMedia0508',
+    'Password': 'n)/m<ySRNs7Af38n',
+    'SecretKey': 'AtisI#_EB-R$T]2EKG!Key'
     });
 
     const options = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        data: postData,
-        url: `${process.env.ATIS_HOST}/api/tq/login`
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    data: postData,
+    url: `${process.env.ATIS_HOST}/api/tq/login`
     };
 
     axios(options).then(login_result => {
-        if (((login_result || {}).data || {}).access_token) {
-        callback(((login_result || {}).data || {}).access_token);
-        } else {
-        callback(false);
-        }
+    if (((login_result || {}).data || {}).access_token) {
+    callback(((login_result || {}).data || {}).access_token);
+    } else {
+    callback(false);
+    }
     });
     }
 
@@ -1031,7 +1051,8 @@ function createPTSReferencePdf(id, callback) {
 
 
 function createExamReferencePdf(id, callback) {
-    db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    db.e_documents_apply.findOne({where:{id}, 
+    include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
     if (result) {
     //console.log('start result', result);
     const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
@@ -1080,7 +1101,8 @@ function createExamReferencePdf(id, callback) {
     });
     } else {
     db.e_documents.create({
-    fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
+    fin: result.fin, diplom_cat_id: 5, document_no: docNo, document_name: 'ARAYIŞ', pdf_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '.pdf', 
+    img_diplom_url: process.env.HOST + '/getfile/reference~' + filename + '-0.png', hash,
     end_date,
     file_details: JSON.stringify({
     document_name: 'ARAYIŞ',
@@ -1110,14 +1132,14 @@ function createExamReferencePdf(id, callback) {
 
 
 function genrateHash(docNo) {
-    return Base64.stringify(hmacSHA512(docNo, process.env.DiplomPrivateKey));
-    //return crypto.createHmac('sha256', process.env.DiplomPrivateKey).update(genrateDocNo(id)).digest("base64");
+return Base64.stringify(hmacSHA512(docNo, process.env.DiplomPrivateKey));
+//return crypto.createHmac('sha256', process.env.DiplomPrivateKey).update(genrateDocNo(id)).digest("base64");
 }
 
 function genrationNumber(s, callBack) {
-    querySync(`SELECT getRandomDocNo(?) AS docNo`, [s]).then((result) => {
-        callBack(result.docNo);
-    });
+querySync(`SELECT getRandomDocNo(?) AS docNo`, [s]).then((result) => {
+callBack(result.docNo);
+});
 }
 
 

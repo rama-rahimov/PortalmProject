@@ -28,96 +28,101 @@ const router = express.Router();
  */
 
 router.get('/all', authenticate, (req, res) => {   
-    db.support_apply.findOne({where:{fin:req.currentUser.fin}, order:[['id', 'DESC']]}).then(appeals => {
-        res.json(appeals);
-    });
+    db.support_apply.findOne({where:{fin:req.currentUser.fin}, 
+    order:[['id', 'DESC']]}).then(appeals => {
+    res.json(appeals) });
 });
 
 
 router.get('/status/:id/:tmsId', authenticate, (req, res) => {
     const { id, tmsId } = req.params;
     sendRequest({ username: 'portaledu', password: 'portaledu123' },
-        '/Apiservice/api/Account/Authenticate', 'POST', null,
-        (data) => {
-            if (data && data.token) {
-                sendRequest(null, `/Apiservice/api/tms/integration/GetIssues/${tmsId}`, 'GET', data.token,
-                    (data2) => {
-                        const s = ((data2.issues || [])[0] || {}).statusId || 0;
-                        const result = ((data2.issues || [])[0] || {}).result || "";
-                        const forIntegration = ((data2.issues || [])[0] || {}).forIntegration;
-                        let statusDescription = ((data2.issues || [])[0] || {}).statusDescription || "";
-                        let status = 0;
-                        switch (s) {
-                            case 1030: status = 1; statusDescription = 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.'; break;
-                            case 1031: status = 2; break;
-                            case 1035: status = 4; statusDescription = 'Müraciətinizin icrası dayandırılmışdır. Cari mövzu ilə əlaqədar yeniliklər olduğu halda yeni müraciət göndərməyiniz xahiş olunur.'; break;
-                            case 1036: status = 5; statusDescription = 'Müraciətinizin icrası təxirə salınmışdır. Müraciətiniz yenidən icraata alındıqdan sonra Sizə məlumat veriləcək, eyni mövzu ilə yeni müraciətin göndərilməməsi xahiş olunur.'; break;
-                            case 1037: status = 6; break;
-                            case 4: status = 3; statusDescription = 'Müraciətinizin araşdırılması tamamlanmışdır.'; break;
-                            default: status = s;
-                        }
-                        if (status && forIntegration) {  
-                            db.notifications.destroy({where:{service:'support', fin:id, title:status}}).then(() => {
-                                db.notifications.create({ service: 'support', fin: id, title: status, description: statusDescription, extra_data: result }).then(() => {
-                                    db.support_apply.update((result ? { status, result } : { status }), {where:{ tms_id: tmsId }}).then(() => {
-                                        res.json({ id: tmsId, status, isUpdate: true });
-                                    });
-                                });
-                            });
-                        } else {
-                            res.json({ id, status, isUpdate: false });
-                        }
-                    }
-                );
-            } else {
-                res.json(data);
-            }
-        }
+    '/Apiservice/api/Account/Authenticate', 'POST', null,
+    (data) => {
+    if (data && data.token) {
+    sendRequest(null, `/Apiservice/api/tms/integration/GetIssues/${tmsId}`, 'GET', data.token,
+    (data2) => {
+    const s = ((data2.issues || [])[0] || {}).statusId || 0;
+    const result = ((data2.issues || [])[0] || {}).result || "";
+    const forIntegration = ((data2.issues || [])[0] || {}).forIntegration;
+    let statusDescription = ((data2.issues || [])[0] || {}).statusDescription || "";
+    let status = 0;
+    switch (s) {
+    case 1030: status = 1; 
+    statusDescription = 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.'; break;
+    case 1031: status = 2; break;
+    case 1035: status = 4; 
+    statusDescription = 'Müraciətinizin icrası dayandırılmışdır. Cari mövzu ilə əlaqədar yeniliklər olduğu halda yeni müraciət göndərməyiniz xahiş olunur.'; break;
+    case 1036: status = 5; 
+    statusDescription = `Müraciətinizin icrası təxirə salınmışdır. Müraciətiniz yenidən icraata alındıqdan sonra Sizə məlumat veriləcək, 
+    eyni mövzu ilə yeni müraciətin göndərilməməsi xahiş olunur.`; break;
+    case 1037: status = 6; break;
+    case 4: status = 3; 
+    statusDescription = 'Müraciətinizin araşdırılması tamamlanmışdır.'; break;
+    default: status = s;
+    }
+    if (status && forIntegration) {  
+    db.notifications.destroy({where:{service:'support', fin:id, title:status}}).then(() => {
+    db.notifications.create({ service: 'support', fin: id, title: status, description: statusDescription, extra_data: result }).then(() => {
+    db.support_apply.update((result ? { status, result } : { status }), {where:{ tms_id: tmsId }}).then(() => {
+    res.json({ id: tmsId, status, isUpdate: true });
+    });
+    });
+    });
+    } else {
+    res.json({ id, status, isUpdate: false });
+    }
+    }
+    );
+    } else {
+    res.json(data);
+    }
+    }
     );
 });
 
 router.post('/getfieldvalues', /*authenticate, */(req, res) => {
     const { fieldCode, derection_type, directions, applicant, m_city } = req.body;
     sendRequest({ username: 'portaledu', password: 'portaledu123' },
-        '/Apiservice/api/Account/Authenticate', 'POST', null,
-        (data) => {
-            if (data && data.token) {
-                const requestData = {
-                    fieldCode: fieldCode
-                };
-                if (fieldCode === "areas" && derection_type && directions && applicant) {
-                    requestData.FilterFields = [{
-                        filterFieldCode: "derection_type",
-                        value: derection_type
-                    },
-                    {
-                        filterFieldCode: "directions",
-                        value: directions
-                    },
-                    {
-                        filterFieldCode: "applicant",
-                        value: applicant
-                    }]
-                } else if (fieldCode === "m_enterprise" && m_city && directions) {
-                    requestData.FilterFields = [{
-                        filterFieldCode: "m_city",
-                        value: m_city
-                    },
-                    {
-                        filterFieldCode: "directions",
-                        value: directions
-                    }];
-                }
-                // const 
-                sendRequest(requestData, '/Apiservice/api/tms/UService/GetFieldValues/', 'POST', data.token,
-                    (data2) => {
-                        res.json(data2);
-                    }
-                );
-            } else {
-                res.json(data);
-            }
-        }
+    '/Apiservice/api/Account/Authenticate', 'POST', null,
+    (data) => {
+    if (data && data.token) {
+    const requestData = {
+    fieldCode: fieldCode
+    };
+    if (fieldCode === "areas" && derection_type && directions && applicant) {
+    requestData.FilterFields = [{
+    filterFieldCode: "derection_type",
+    value: derection_type
+    },
+    {
+    filterFieldCode: "directions",
+    value: directions
+    },
+    {
+    filterFieldCode: "applicant",
+    value: applicant
+    }]
+    } else if (fieldCode === "m_enterprise" && m_city && directions) {
+    requestData.FilterFields = [{
+    filterFieldCode: "m_city",
+    value: m_city
+    },
+    {
+    filterFieldCode: "directions",
+    value: directions
+    }];
+    }
+    // const 
+    sendRequest(requestData, '/Apiservice/api/tms/UService/GetFieldValues/', 'POST', data.token,
+    (data2) => {
+    res.json(data2);
+    }
+    );
+    } else {
+    res.json(data);
+    }
+    }
     );
 });
 
@@ -143,17 +148,17 @@ router.post('/getfieldvalues', /*authenticate, */(req, res) => {
 router.get('/by_id/:id', authenticate, (req, res) => {
     const { id } = req.params;
     if (id) {  
-        db.support_apply.findOne({where:{id, fin:req.currentUser.fin}}).then(apply => {
-            if (apply) {       
-                db.support_files.findAll({where:{support_apply_id:id}}).then(certificates => {
-                    res.json({ ...apply, certificates });
-                });
-            } else {
-                res.json({ error: 'support_apply not found' });
-            }
-        });
+    db.support_apply.findOne({where:{id, fin:req.currentUser.fin}}).then(apply => {
+    if (apply) {       
+    db.support_files.findAll({where:{support_apply_id:id}}).then(certificates => {
+    res.json({ ...apply, certificates });
+    });
     } else {
-        res.json({ error: 'id incorrect' });
+    res.json({ error: 'support_apply not found' });
+    }
+    });
+    } else {
+    res.json({ error: 'id incorrect' });
     }
 });
 
@@ -214,50 +219,50 @@ router.post('/save', authenticate, (req, res) => {
     const { certificates } = dataForm;
 
     saveApply(0, step, dataForm, req.currentUser.fin, (result) => {
-        if (result.id) {               
-            db.notifications.destroy({where:{service:'support', fin:result.id, title:(!!status ? 1 : 0)}}).then(() => {
-                db.notifications.create({ service: 'support', fin: result.id, title: !!status ? 1 : 0, description: !!status ? 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.' : 'Müraciətinizin araşdırılması üçün ərizə formasında tələb olunan bütün məlumatların doldurulub, göndərilməsi tələb olunur.', extra_data: "" }).then(() => {
-                    db.support_files.destroy({where:{support_apply_id:result.id}}).then(() => {
-                        if (certificates) {
-                            certificates.flatMap(item => {
-                                item.support_apply_id = result.id ;
-                            });
-                            db.support_files.bulkCreate(certificates).then((suppFiles) => {
-                                if (!!status) {
-                                    sendDataProsys(dataForm, (r) => {
-                                        if ((r || {}).id) {
-                                            db.support_apply.update({ tms_id: (r || {}).id, status: 1 }, {where:{ id: result.id }}).then(() => {
-                                                res.json(result);
-                                            });
-                                        } else {
-                                            res.json({ id: result.id, error: 'Müraciətiniz hazırda göndərilə bilinmədi. Bir müddət sonra təkrar yoxlayın!' });
-                                        }
-                                    });
-                                } else {
-                                    res.json(result);
-                                }
-                            });
-                        } else {
-                            if (!!status) {
-                                sendDataProsys(dataForm, (r) => {
-                                    if ((r || {}).id) {
-                                        db.support_apply.update({ tms_id: (r || {}).id, status: 1 }, {where:{ id: result.id }}).then(() => {
-                                            res.json(result);
-                                        });
-                                    } else {
-                                        res.json({ id: result.id, error: 'Müraciətiniz hazırda göndərilə bilinmədi. Bir müddət sonra təkrar yoxlayın!' });
-                                    }
-                                });
-                            } else {
-                                res.json(result);
-                            }
-                        }
-                    });
-                });
-            });
-        } else {
-            res.json(result);
-        }
+    if (result.id) {               
+    db.notifications.destroy({where:{service:'support', fin:result.id, title:(!!status ? 1 : 0)}}).then(() => {
+    db.notifications.create({ service: 'support', fin: result.id, title: !!status ? 1 : 0, description: !!status ? 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.' : 'Müraciətinizin araşdırılması üçün ərizə formasında tələb olunan bütün məlumatların doldurulub, göndərilməsi tələb olunur.', extra_data: "" }).then(() => {
+    db.support_files.destroy({where:{support_apply_id:result.id}}).then(() => {
+    if (certificates) {
+    certificates.flatMap(item => {
+    item.support_apply_id = result.id ;
+    });
+    db.support_files.bulkCreate(certificates).then((suppFiles) => {
+    if (!!status) {
+    sendDataProsys(dataForm, (r) => {
+    if ((r || {}).id) {
+    db.support_apply.update({ tms_id: (r || {}).id, status: 1 }, {where:{ id: result.id }}).then(() => {
+    res.json(result);
+    });
+    } else {
+    res.json({ id: result.id, error: 'Müraciətiniz hazırda göndərilə bilinmədi. Bir müddət sonra təkrar yoxlayın!' });
+    }
+    });
+    } else {
+    res.json(result);
+    }
+    });
+    } else {
+    if (!!status) {
+    sendDataProsys(dataForm, (r) => {
+    if ((r || {}).id) {
+    db.support_apply.update({ tms_id: (r || {}).id, status: 1 }, {where:{ id: result.id }}).then(() => {
+    res.json(result);
+    });
+    } else {
+    res.json({ id: result.id, error: 'Müraciətiniz hazırda göndərilə bilinmədi. Bir müddət sonra təkrar yoxlayın!' });
+    }
+    });
+    } else {
+    res.json(result);
+    }
+    }
+    });
+    });
+    });
+    } else {
+     res.json(result);
+    }
     });
 });
 
@@ -265,51 +270,51 @@ module.exports = router;
 
 function saveApply(status, step, dataForm, fin, callback) {
     const { id, apply_type, education_type, contingent, child_citizenship, child_fin, child_utis_code,
-        child_first_name, child_last_name, child_father_name, child_birth_date, child_address, country_code,
-        child_is_address_current, child_actual_address, child_city, child_region, child_current_enterprise,
-        child_teaching_language, child_grade, child_parent_type, theme, city, region, current_enterprise, child_id,
-        consent, general_information, description_application, citizenship, first_name, born_country, area_id,
-        last_name, father_name, birth_date, address, is_address_current, actual_address, country, email, phone } = dataForm
+    child_first_name, child_last_name, child_father_name, child_birth_date, child_address, country_code,
+    child_is_address_current, child_actual_address, child_city, child_region, child_current_enterprise,
+    child_teaching_language, child_grade, child_parent_type, theme, city, region, current_enterprise, child_id,
+    consent, general_information, description_application, citizenship, first_name, born_country, area_id,
+    last_name, father_name, birth_date, address, is_address_current, actual_address, country, email, phone } = dataForm
     if (id) {  
-        db.support_apply.findOne({attributes:['id', 'fin'], where:{id}}).then(support_app => { 
-            if (support_app) {
-                if (fin !== support_app.fin) {
-                    callback({ error: 'Invailid fin' });
-                } else { 
-                    db.support_apply.update({
-                        status, step, apply_type, education_type, contingent, child_citizenship, child_fin, child_utis_code,
-                        child_first_name, child_last_name, child_father_name, child_birth_date, child_address, country_code,
-                        child_is_address_current, child_actual_address, child_city, child_region, child_current_enterprise,
-                        child_teaching_language, child_grade, child_parent_type, theme, city, region, current_enterprise, area_id,
-                        consent, general_information, description_application, citizenship, fin, first_name, born_country, child_id,
-                        last_name, father_name, birth_date, address, is_address_current, actual_address, country, email, phone
-                    }, { where:{ id } }).then((support_apply_update) => {
-                        if (support_apply_update.error) {
-                            callback({ error: support_apply_update.error });
-                        } else {
-                            callback({ id });
-                        }
-                    });
-                }
-            } else {
-                callback({ error: 'support apply by id not found' });
-            }
-        });
+    db.support_apply.findOne({attributes:['id', 'fin'], where:{id}}).then(support_app => { 
+    if (support_app) {
+    if (fin !== support_app.fin) {
+    callback({ error: 'Invailid fin' });
+    } else { 
+    db.support_apply.update({
+    status, step, apply_type, education_type, contingent, child_citizenship, child_fin, child_utis_code,
+    child_first_name, child_last_name, child_father_name, child_birth_date, child_address, country_code,
+    child_is_address_current, child_actual_address, child_city, child_region, child_current_enterprise,
+    child_teaching_language, child_grade, child_parent_type, theme, city, region, current_enterprise, area_id,
+    consent, general_information, description_application, citizenship, fin, first_name, born_country, child_id,
+    last_name, father_name, birth_date, address, is_address_current, actual_address, country, email, phone
+    }, { where:{ id } }).then((support_apply_update) => {
+    if (support_apply_update.error) {
+    callback({ error: support_apply_update.error });
     } else {
-        db.support_apply.create({
-            fin, child_id, status, step, apply_type, education_type, contingent, child_citizenship, child_fin, child_utis_code,
-            child_first_name, child_last_name, child_father_name, child_birth_date, child_address, country_code,
-            child_is_address_current, child_actual_address, child_city, child_region, child_current_enterprise,
-            child_teaching_language, child_grade, child_parent_type, theme, city, region, current_enterprise,
-            consent, general_information, description_application, citizenship, fin, first_name, born_country, area_id,
-            last_name, father_name, birth_date, address, is_address_current, actual_address, country, email, phone
-        }).then((applyId) => {
-            if (applyId.error) {
-                callback({ error: applyId.error });
-            } else {
-                callback({ id: applyId });
-            }
-        });
+    callback({ id });
+    }
+    });
+    }
+    } else {
+    callback({ error: 'support apply by id not found' });
+    }
+    });
+    } else {
+    db.support_apply.create({
+    fin, child_id, status, step, apply_type, education_type, contingent, child_citizenship, child_fin, child_utis_code,
+    child_first_name, child_last_name, child_father_name, child_birth_date, child_address, country_code,
+    child_is_address_current, child_actual_address, child_city, child_region, child_current_enterprise,
+    child_teaching_language, child_grade, child_parent_type, theme, city, region, current_enterprise,
+    consent, general_information, description_application, citizenship, fin, first_name, born_country, area_id,
+    last_name, father_name, birth_date, address, is_address_current, actual_address, country, email, phone
+    }).then((applyId) => {
+    if (applyId.error) {
+    callback({ error: applyId.error });
+    } else {
+    callback({ id: applyId });
+    }
+    });
     }
 }
 
@@ -319,26 +324,26 @@ function saveApply(status, step, dataForm, fin, callback) {
 const sendRequest = (data, path, method, token, callback) => {
     //console.log('data  **** ', data);
     const headers = (token ? {
-        Authorization: "Bearer " + token
+    Authorization: "Bearer " + token
     } : {});
     headers.appKey = 'TMS';
     let api;
     if (method === "GET") {
-        api = axios.get(process.env.SUPPORT_HOST + path, {
-            headers: headers
-        });
+    api = axios.get(process.env.SUPPORT_HOST + path, {
+    headers: headers
+    });
     } else {
-        api = axios.post(process.env.SUPPORT_HOST + path, data, {
-            headers: headers
-        });
+    api = axios.post(process.env.SUPPORT_HOST + path, data, {
+    headers: headers
+    });
     }
     api.then(result => {
-        //console.log('result  **** ', result.data);
-        callback(result.data)
+    //console.log('result  **** ', result.data);
+    callback(result.data)
     }).catch(e => {
-        ////console.log('error  **** ', e);
-        if ((e.response || {}).data)
-            callback(e.response.data)
+    ////console.log('error  **** ', e);
+    if ((e.response || {}).data)
+    callback(e.response.data)
     });
 }
 
@@ -535,15 +540,15 @@ const sendDataProsys = (data, callback) => {
         'subject': data.theme,
         'body': data.description_application,
         'sender': {
-            name: data.first_name,
-            surname: data.last_name,
-            midname: data.father_name,
-            country: data.born_country,
-            finCode: data.fin,
-            email: data.email,
-            address: data.actual_address || data.address,
-            phone1: data.phone ? ('+' + data.country_code + data.phone) : '-',
-            city: data.region || '-'
+        name: data.first_name,
+        surname: data.last_name,
+        midname: data.father_name,
+        country: data.born_country,
+        finCode: data.fin,
+        email: data.email,
+        address: data.actual_address || data.address,
+        phone1: data.phone ? ('+' + data.country_code + data.phone) : '-',
+        city: data.region || '-'
         },
         'documents': [],
         'fieldvalues': fieldvalues.filter(data => !!data.value)
@@ -552,35 +557,34 @@ const sendDataProsys = (data, callback) => {
         const fileTokens = (data.certificates || []).map(c => (c.doc_scan || "").replace('/file/', '')).filter(c => !!c);
         if (fileTokens.length > 0)  
         db.files.findAll({where:{token:{[Op.in]:[fileTokens]}}}).then((files) => {
-                files.forEach(file => {
-                    (async () => {
-                        await fs.readFile(file.path, { encoding: 'base64' }, (err, data) => {
-                            if (!err) {
-                                const conctentType = data.substr(0, 4) !== 'data' ? 'data:image/png;base64,' : '';
-                                requestData.documents.push({
-                                    fileName: file.name,
-                                    fileContent: (conctentType + data)
-                                });
-                            }
-                        });
-                    })();
-                });
-            });
+        files.forEach(file => {
+        (async () => {
+        await fs.readFile(file.path, { encoding: 'base64' }, (err, data) => {
+        if (!err) {
+        const conctentType = data.substr(0, 4) !== 'data' ? 'data:image/png;base64,' : '';
+        requestData.documents.push({
+        fileName: file.name,
+        fileContent: (conctentType + data)
+        });
+        }
+        });
+        })();
+        });
+        });
     })();
 
 
     sendRequest({ username: 'portaledu', password: 'portaledu123' },
         '/Apiservice/api/Account/Authenticate', 'POST', null,
         (data) => {
-            if (data && data.token) {
-                sendRequest(requestData, '/Apiservice/api/tms/UService/Save', 'POST', data.token,
-                    (data2) => {
-                        callback(data2);
-                    }
-                );
-            } else {
-                callback(data);
-            }
+        if (data && data.token) {
+        sendRequest(requestData, '/Apiservice/api/tms/UService/Save', 'POST', data.token,
+        (data2) => {
+        callback(data2);
         }
-    );
-}
+        );
+        } else {
+        callback(data);
+        }
+        }
+    )}

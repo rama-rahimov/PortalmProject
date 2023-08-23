@@ -3,8 +3,6 @@ const axios = require('axios') ;
 const https = require('https') ;
 const querystring = require('querystring') ;
 const db = require('../models');
-const { service_left_bar } = require('../models/service_left_bar.js') ;
-const { material_base } = require('../models/material_base.js') ;
 const { authenticate } = require('../middlewares/authenticate.js') ;
 const { saveFile, request } = require('../middlewares/helper.js') ;
 const { smsSend } = require('../middlewares/sms.js') ;
@@ -38,7 +36,7 @@ const router = express.Router();
 router.post('/save_file_dir', authenticate, (req, res) => {
   const { file_data, path } = req.body;
   saveFile(file_data, path, req.currentUser.fin, (filename) => {
-    res.json(filename);
+  res.json(filename);
   });
 });
 
@@ -48,25 +46,25 @@ router.get(`/course/pese/data`, (req, res) => {
 
 router.get('/course/show', authenticate, (req, res) => {
   axios
-    .get(
-      process.env.VACANCIES_HOST +
-        '/api/cadet/teaching_courses_all_statusopen/?&teaching_year=32',
-      {
-        headers: {
-          authorization: 'Bearer ' + process.env.VACANCIES_TOKEN,
-        },
-      }
-    )
-    .then(({ data }) => {
-      res.json({
-        openCourse: data,
-      });
-    })
-    .catch((error) => {
-      res.json({
-        success: false,
-      });
-    });
+  .get(
+  process.env.VACANCIES_HOST +
+  '/api/cadet/teaching_courses_all_statusopen/?&teaching_year=32',
+  {
+  headers: {
+  authorization: 'Bearer ' + process.env.VACANCIES_TOKEN,
+  },
+  }
+  )
+  .then(({ data }) => {
+  res.json({
+  openCourse: data,
+  });
+  })
+  .catch((error) => {
+  res.json({
+  success: false,
+  });
+  });
 });
 /**
  * @api {post} /main/send_phone_for_verification/  confirm phone number check
@@ -96,97 +94,97 @@ router.post('/send_phone_for_verification', async (req, res) => {
   const code = Math.floor(Math.random() * (999999 - 0 + 1)) + 0;
   const isEng = (req.headers.language || '') === 'en';
   const message = !isEng
-    ? `Təsdiqləmə şifrəsi: ${code} Paylaşmayın!`
-    : `Confirmation password: ${code} Do not share!`;
+  ? `Təsdiqləmə şifrəsi: ${code} Paylaşmayın!`
+  : `Confirmation password: ${code} Do not share!`;
 
   
-    db.users.findOne({ attributes: ['phone'], where: { phone, country_code } }).then((user) => {
-    if (user) {
-      res.json({
-        err: !isEng
-          ? 'Bu nömrə ilə artıq qeydiyyatdan keçilib'
-          : 'It is already registered with this number',
-      });
-    } else {
-        db.phone_verification.findOne({
-          attributes: [
-            'phone',
-            'country_code',
-            'number_wait_date',
-            [
-              db.sequelize.fn(
-                'if',
-                { number_wait_date: { [Op.lt]: db.sequelize.fn('NOW') } },
-                1,
-                0
-              ),
-              'expire',
-            ],
-          ],
-          where: { phone, country_code },
-        }).then((pd) => {
-        if (pd) {
-          if (Number(pd.expire) === 1) {
-            smsSend(
-              phone,
-              message,
-              () => {
-                  db.phone_verification.update(
-                    {
-                      code,
-                      verify: 0,
-                      updated_date: db.sequelize.fn('NOW'),
-                      count: 1,
-                      number_wait_date: db.sequelize.literal(
-                        `NOW() + INTERVAL 2 MINUTE`
-                      ),
-                    },
-                    { where: { phone, country_code } }
-                  ).then(() => {
-                  res.json({
-                    err: '',
-                    message: !isEng
-                      ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${country_code} ${phone} nömrəsinə göndərildi.`
-                      : `The confirmation code was sent to +${country_code} ${phone} via an SMS.` /*, csrf: req.new_csrf */,
-                  });
-                });
-              },
-              country_code
-            );
-          } else {
-            res.json({
-              err: !isEng
-                ? 'Yenidən göndərmək üçün gözləyin'
-                : 'Wait for it to resend',
-            });
-          }
-        } else {
-          smsSend(
-            phone,
-            message,
-            () => {
-                db.phone_verification.create({
-                  phone,
-                  country_code,
-                  code,
-                  created_date: db.sequelize.fn('NOW'),
-                  number_wait_date: db.sequelize.literal(
-                    `NOW() + INTERVAL 2 MINUTE`
-                  ),
-                }).then(() => {
-                res.json({
-                  err: '',
-                  message: !isEng
-                    ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${country_code} ${phone} nömrəsinə göndərildi.`
-                    : `The confirmation code was sent to +${country_code} ${phone} via an SMS.` /*, csrf: req.new_csrf */,
-                });
-              });
-            },
-            country_code
-          );
-        }
-      });
-    }
+  db.users.findOne({ attributes: ['phone'], where: { phone, country_code } }).then((user) => {
+  if (user) {
+  res.json({
+  err: !isEng
+  ? 'Bu nömrə ilə artıq qeydiyyatdan keçilib'
+  : 'It is already registered with this number',
+  });
+  } else {
+  db.phone_verification.findOne({
+  attributes: [
+  'phone',
+  'country_code',
+  'number_wait_date',
+  [
+  db.sequelize.fn(
+  'if',
+  { 'number_wait_date': { [Op.lt]: db.sequelize.fn('NOW') } },
+  1,
+  0
+  ),
+  'expire',
+  ],
+  ],
+  where: { phone, country_code },
+  }).then((pd) => {
+  if (pd) {
+  if (Number(pd.expire) === 1) {
+  smsSend(
+  phone,
+  message,
+  () => {
+  db.phone_verification.update(
+  {
+  code,
+  verify: 0,
+  updated_date: db.sequelize.fn('NOW'),
+  count: 1,
+  number_wait_date: db.sequelize.literal(
+  `NOW() + INTERVAL 2 MINUTE`
+  ),
+  },
+  { where: { phone, country_code } }
+  ).then(() => {
+  res.json({
+  err: '',
+  message: !isEng
+  ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${country_code} ${phone} nömrəsinə göndərildi.`
+  : `The confirmation code was sent to +${country_code} ${phone} via an SMS.` /*, csrf: req.new_csrf */,
+  });
+  });
+  },
+  country_code
+  );
+  } else {
+  res.json({
+  err: !isEng
+  ? 'Yenidən göndərmək üçün gözləyin'
+  : 'Wait for it to resend',
+  });
+  }
+  } else {
+  smsSend(
+  phone,
+  message,
+  () => {
+  db.phone_verification.create({
+  phone,
+  country_code,
+  code,
+  created_date: db.sequelize.fn('NOW'),
+  number_wait_date: db.sequelize.literal(
+  `NOW() + INTERVAL 2 MINUTE`
+  ),
+  }).then(() => {
+  res.json({
+  err: '',
+  message: !isEng
+  ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${country_code} ${phone} nömrəsinə göndərildi.`
+  : `The confirmation code was sent to +${country_code} ${phone} via an SMS.` /*, csrf: req.new_csrf */,
+  });
+  });
+  },
+  country_code
+  );
+  }
+  });
+  }
   });
 });
 
@@ -215,118 +213,118 @@ router.post('/send_phone_for_verification', async (req, res) => {
 router.post('/phone_verification_code', (req, res) => {
   const { phone, code, country_code, user_id } = req.body;
   const isEng = (req.headers.language || '') === 'en';
-    db.phone_verification.findOne({
-      attributes: ['id', 'count', 'code'],
-      where: {
-        phone,
-        country_code,
-        number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
-      },
-    }).then((result) => {
-    if (result && result.id) {
-      if (
-        Number(result.count || 0) < 5 &&
-        String(result.code) === String(code)
-      ) {
-          db.phone_verification.update(
-            { verify: 1 },
-            { where: { id: result.id } }
-          ).then(() => {
-            if (user_id)
-                db.users.update(
-                  { phone, country_code },
-                  { where: { id: user_id } }
-                ).then(() => {
-                  res.json({
-                    err: '',
-                    message: !isEng
-                      ? 'Nömrəniz təsdiqləndi'
-                      : 'Your number has been confirmed',
-                  });
-                }
-              );
-            else
-              res.json({
-                err: '',
-                message: !isEng
-                  ? 'Nömrəniz təsdiqləndi'
-                  : 'Your number has been confirmed',
-              });
-          }
-        );
-      } else {
-          db.phone_verification.update(
-            { count: Number(result.count || 0) + 1 },
-            { where: { id: result.id } }
-          ).then(() => {
-            if (Number(result.count || 0) < 5) {
-              res.json({
-                err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
-              });
-            } else {
-              res.json({
-                err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
-                message: '',
-              });
-            }
-          }
-        );
-      }
-    } else {
-      res.json({ err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect' });
-    }
+  db.phone_verification.findOne({
+  attributes: ['id', 'count', 'code'],
+  where: {
+  phone,
+  country_code,
+  number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
+  },
+  }).then((result) => {
+  if (result && result.id) {
+  if (
+  Number(result.count || 0) < 5 &&
+  String(result.code) === String(code)
+  ) {
+  db.phone_verification.update(
+  { verify: 1 },
+  { where: { id: result.id } }
+  ).then(() => {
+  if (user_id)
+  db.users.update(
+  { phone, country_code },
+  { where: { id: user_id } }
+  ).then(() => {
+  res.json({
+  err: '',
+  message: !isEng
+  ? 'Nömrəniz təsdiqləndi'
+  : 'Your number has been confirmed',
+  });
+  }
+  );
+  else
+  res.json({
+  err: '',
+  message: !isEng
+  ? 'Nömrəniz təsdiqləndi'
+  : 'Your number has been confirmed',
+  });
+  }
+  );
+  } else {
+  db.phone_verification.update(
+  { count: Number(result.count || 0) + 1 },
+  { where: { id: result.id } }
+  ).then(() => {
+  if (Number(result.count || 0) < 5) {
+  res.json({
+  err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
+  });
+  } else {
+  res.json({
+  err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
+  message: '',
+  });
+  }
+  }
+  );
+  }
+  } else {
+  res.json({ err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect' });
+  }
   });
 });
 
 router.post('/phone_verification_code_foredit', (req, res) => {
   const { phone, code, country_code } = req.body;
   const isEng = (req.headers.language || '') === 'en';
-    db.phone_verification.findOne({
-      attributes: ['id', 'count', 'code'],
-      where: {
-        phone,
-        country_code,
-        number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
-      },
-    }).then((result) => {
-    if (result && result.id) {
-      if (
-        Number(result.count || 0) < 5 &&
-        String(result.code) === String(code)
-      ) {
-          db.phone_verification.update(
-            { verify: 1, count: 0 },
-            { where: { id: result.id } }
-          ).then(() => {
-            res.json({
-              err: '',
-              message: !isEng
-                ? 'Nömrəniz təsdiqləndi'
-                : 'Your number has been confirmed',
-            });
-          }
-        );
-      } else {
-          db.phone_verification.update(
-            { count: Number(result.count || 0) + 1 },
-            { where: { id: result.id } }
-          ).then(() => {
-            if (Number(result.count || 0) < 5) {
-              res.json({
-                err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
-              });
-            } else {
-              res.json({
-                err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
-                message: '',
-              });
-            }
-          }
-        );
-      }
-    } else {
-      res.json({ err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect' });
-    }
+  db.phone_verification.findOne({
+  attributes: ['id', 'count', 'code'],
+  where: {
+  phone,
+  country_code,
+  number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
+  },
+  }).then((result) => {
+  if (result && result.id) {
+  if (
+  Number(result.count || 0) < 5 &&
+  String(result.code) === String(code)
+  ) {
+  db.phone_verification.update(
+  { verify: 1, count: 0 },
+  { where: { id: result.id } }
+  ).then(() => {
+  res.json({
+  err: '',
+  message: !isEng
+  ? 'Nömrəniz təsdiqləndi'
+  : 'Your number has been confirmed',
+  });
+  }
+  );
+  } else {
+  db.phone_verification.update(
+  { count: Number(result.count || 0) + 1 },
+  { where: { id: result.id } }
+  ).then(() => {
+  if (Number(result.count || 0) < 5) {
+  res.json({
+  err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
+  });
+  } else {
+  res.json({
+  err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
+  message: '',
+  });
+  }
+  }
+  );
+  }
+  } else {
+  res.json({ err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect' });
+  }
   });
 });
 
@@ -357,61 +355,61 @@ router.post('/user_phone_verification_code', (req, res) => {
   const isEng = (req.headers.language || '') === 'en';
   db.users.findOne({ where: { email } }).then(u => {
     
-    if (u.phone)
-        db.phone_verification.findOne({
-          attributes: ['id', 'count', 'code'],
-          where: {
-            phone:u.phone,
-            country_code:u.country_code,
-            number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
-          },
-        }).then((result) => {
-        if (result && result.id) {
-          if (
-            Number(result.count || 0) < 5 &&
-            String(result.code) === String(phone_verification_code)
-          ) {
-              db.phone_verification.update(
-                { verify: 1 },
-                { where: { id: result.id } }
-              ).then(() => {
-                res.json({
-                  err: '',
-                  message: !isEng
-                    ? 'Nömrəniz təsdiqləndi'
-                    : 'Your number has been confirmed',
-                });
-              }
-            );
-          } else {
-              db.phone_verification.update(
-                { count: Number(result.count || 0) + 1 },
-                { where: { id: result.id } }
-              ).then(() => {
-                if (Number(result.count || 0) < 5) {
-                  res.json({
-                    err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
-                  });
-                } else {
-                  res.json({
-                    err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
-                    message: '',
-                  });
-                }
-              }
-            );
-          }
-        } else {
-          res.json({
-            err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
-          });
-        }
-      });
-    else
-      res.json({
-        err: !isEng ? 'İstifadəçi tapılmadı' : 'User not found',
-        message: '',
-      });
+  if (u.phone)
+  db.phone_verification.findOne({
+  attributes: ['id', 'count', 'code'],
+  where: {
+  phone:u.phone,
+  country_code:u.country_code,
+  number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
+  },
+  }).then((result) => {
+  if (result && result.id) {
+  if (
+  Number(result.count || 0) < 5 &&
+  String(result.code) === String(phone_verification_code)
+  ) {
+  db.phone_verification.update(
+  { verify: 1 },
+  { where: { id: result.id } }
+  ).then(() => {
+  res.json({
+  err: '',
+  message: !isEng
+  ? 'Nömrəniz təsdiqləndi'
+  : 'Your number has been confirmed',
+  });
+  }
+  );
+  } else {
+  db.phone_verification.update(
+  { count: Number(result.count || 0) + 1 },
+  { where: { id: result.id } }
+  ).then(() => {
+  if (Number(result.count || 0) < 5) {
+  res.json({
+  err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
+  });
+  } else {
+  res.json({
+  err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
+  message: '' ,
+  });
+  }
+  }
+  );
+  }
+  } else {
+  res.json({
+  err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect',
+  });
+  }
+  });
+  else
+  res.json({
+  err: !isEng ? 'İstifadəçi tapılmadı' : 'User not found',
+  message: '',
+  });
   });
 });
 
@@ -442,138 +440,138 @@ router.post('/send_user_for_verification', (req, res) => {
   const code = Math.floor(Math.random() * (999999 - 0 + 1)) + 0;
   const isEng = (req.headers.language || '') === 'en';
   const message = !isEng
-    ? `Təsdiqləmə şifrəsi: ${code} Paylaşmayın!`
-    : `Confirmation password: ${code} Do not share!`;
-    db.phone_verification.findOne({
-      attributes: ['id', 'count'],
-      where: {
-        phone,
-        country_code: 1,
-        number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
-      },
-    }).then((eChek) => {
-    if (Number((eChek || {}).count || 0) < 5) {
-      db.users.findOne({ where: { email } }).then((u) => {
-        if (u && u.phone /* && phone == u.phone.substring(u.phone.length - 4)*/) {  // komente aldigimi bilmirem ne ucun yazilib
-            db.phone_verification.findOne({
-              attributes: [
-                'phone',
-                'country_code',
-                'number_wait_date',
-                [
-                  db.sequelize.fn(
-                    'if',
-                    { 'number_wait_date': { [Op.gt]: db.sequelize.fn('NOW') } },
-                    1,
-                    0
-                  ),
-                  'expire',
-                ],
-              ],
-              where: { phone: u.phone, country_code: u.country_code },
-            }).then((pd) => {
-              const expire = pd.number_wait_date > new Date() ? 1 : 0 ;
-            if (pd) {
-              if (Number(expire) === 1) {
-                smsSend(
-                  u.phone,
-                  message,
-                  () => {
-                      db.phone_verification.update(
-                        {
-                          code,
-                          verify: 0,
-                          count: 1,
-                          updated_date: db.sequelize.fn('NOW'),
-                          number_wait_date: db.sequelize.literal(
-                            `NOW() + INTERVAL 2 MINUTE`
-                          ),
-                        },
-                        {
-                          where: {
-                            phone: u.phone,
-                            country_code: u.country_code,
-                          },
-                        }
-                      ).then(() => {
-                      res.json({
-                        err: '',
-                        message: !isEng
-                          ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${u.country_code} ${u.phone} nömrəsinə göndərildi.`
-                          : `The confirmation code was sent to +${u.country_code} ${u.phone} via an SMS.` /*, csrf: req.new_csrf */,
-                      });
-                    });
-                  },
-                  u.country_code
-                );
-              } else {
-                res.json({
-                  err: !isEng
-                    ? 'Yenidən göndərmək üçün gözləyin'
-                    : 'Wait for it to resend',
-                });
-              }
-            } else {
-              smsSend(
-                u.phone,
-                message,
-                () => {
-                    db.phone_verification.create({
-                      phone: u.phone,
-                      country_code: u.country_code,
-                      code,
-                      created_date: db.sequelize.fn('NOW'),
-                      number_wait_date: db.sequelize.literal(
-                        `NOW() + INTERVAL 2 MINUTE`
-                      ),
-                    }).then(() => {
-                    res.json({
-                      err: '',
-                      message: !isEng
-                        ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${u.country_code} ${u.phone} nömrəsinə göndərildi.`
-                        : `The confirmation code was sent to +${u.country_code} ${u.phone} via an SMS.` /*, csrf: req.new_csrf */,
-                    });
-                  });
-                },
-                u.country_code
-              );
-            }
-          });
-        } else {
-          if (eChek) {
-              db.phone_verification.update(
-                { count: Number(eChek.count || 0) + 1 },
-                { where: { id: eChek.id } }
-              ).then(() => {
-              res.json({
-                err: !isEng ? 'Nömrə yanlışdır.' : 'The number is incorrect.',
-                message: '',
-              });
-            });
-          } else {
-              db.phone_verification.create({
-                phone: email,
-                country_code: '1',
-                code: '1',
-                created_date: db.sequelize.fn('NOW'),
-                number_wait_date: db.sequelize.literal(
-                  `NOW() + INTERVAL 2 MINUTE`
-                ),
-              }).then(() => {
-              res.json({
-                err: !isEng ? 'Nömrə yanlışdır.' : 'The number is incorrect.',
-                message: '',
-              });
-            });
-          }
-        }
-      });
-    } else {
-      res.json({
-        err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
-        message: '',
-      });
-    }
+  ? `Təsdiqləmə şifrəsi: ${code} Paylaşmayın!`
+  : `Confirmation password: ${code} Do not share!`;
+  db.phone_verification.findOne({
+  attributes: ['id', 'count'],
+  where: {
+  phone,
+  country_code: 1,
+  number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
+  },
+  }).then((eChek) => {
+  if (Number((eChek || {}).count || 0) < 5) {
+  db.users.findOne({ where: { email } }).then((u) => {
+  if (u && u.phone /* && phone == u.phone.substring(u.phone.length - 4)*/) {  // komente aldigimi bilmirem ne ucun yazilib
+  db.phone_verification.findOne({
+  attributes: [
+  'phone',
+  'country_code',
+  'number_wait_date',
+  [
+  db.sequelize.fn(
+  'if',
+  { 'number_wait_date': { [Op.gt]: db.sequelize.fn('NOW') } },
+  1,
+  0
+  ),
+  'expire',
+  ],
+  ],
+  where: { phone: u.phone, country_code: u.country_code },
+  }).then((pd) => {
+  const expire = pd.number_wait_date > new Date() ? 1 : 0 ;
+  if (pd) {
+  if (Number(expire) === 1) {
+  smsSend(
+  u.phone,
+  message,
+  () => {
+  db.phone_verification.update(
+  {
+  code,
+  verify: 0,
+  count: 1,
+  updated_date: db.sequelize.fn('NOW'),
+  number_wait_date: db.sequelize.literal(
+  `NOW() + INTERVAL 2 MINUTE`
+  ),
+  },
+  {
+  where: {
+  phone: u.phone,
+  country_code: u.country_code,
+  },
+  }
+  ).then(() => {
+  res.json({
+  err: '',
+  message: !isEng
+  ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${u.country_code} ${u.phone} nömrəsinə göndərildi.`
+  : `The confirmation code was sent to +${u.country_code} ${u.phone} via an SMS.` /*, csrf: req.new_csrf */,
+  });
+  });
+  },
+  u.country_code
+  );
+  } else {
+  res.json({
+  err: !isEng
+  ? 'Yenidən göndərmək üçün gözləyin'
+  : 'Wait for it to resend',
+  });
+  }
+  } else {
+  smsSend(
+  u.phone,
+  message,
+  () => {
+  db.phone_verification.create({
+  phone: u.phone,
+  country_code: u.country_code,
+  code,
+  created_date: db.sequelize.fn('NOW'),
+  number_wait_date: db.sequelize.literal(
+  `NOW() + INTERVAL 2 MINUTE`
+  ),
+  }).then(() => {
+  res.json({
+  err: '',
+  message: !isEng
+  ? `Təsdiqləmə şifrəsi SMS vasitəsi ilə +${u.country_code} ${u.phone} nömrəsinə göndərildi.`
+  : `The confirmation code was sent to +${u.country_code} ${u.phone} via an SMS.` /*, csrf: req.new_csrf */,
+  });
+  });
+  },
+  u.country_code
+  );
+  }
+  });
+  } else {
+  if (eChek) {
+  db.phone_verification.update(
+  { count: Number(eChek.count || 0) + 1 },
+  { where: { id: eChek.id } }
+  ).then(() => {
+  res.json({
+  err: !isEng ? 'Nömrə yanlışdır.' : 'The number is incorrect.',
+  message: '',
+  });
+  });
+  } else {
+  db.phone_verification.create({
+  phone: email,
+  country_code: '1',
+  code: '1',
+  created_date: db.sequelize.fn('NOW'),
+  number_wait_date: db.sequelize.literal(
+  `NOW() + INTERVAL 2 MINUTE`
+  ),
+  }).then(() => {
+  res.json({
+  err: !isEng ? 'Nömrə yanlışdır.' : 'The number is incorrect.',
+  message: '',
+  });
+  });
+  }
+  }
+  });
+  } else {
+  res.json({
+  err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.',
+  message: '',
+  });
+  }
   });
 });
 
@@ -601,18 +599,18 @@ router.post('/get_user_phone', (req, res) => {
   const isEng = (req.headers.language || '') === 'en';
   console.log({ isEng, la: req.headers.language });
   db.users.findOne({ where: { email } }).then((u) => {
-    if (u && u.phone)
-      res.json({
-        err: '',
-        message: '',
-        phone: u.phone.substring(0, u.phone.length - 4),
-        country_code: u.country_code,
-      });
-    else
-      res.json({
-        err: !isEng ? 'İstifadəçi tapılmadı' : 'User not found',
-        message: '',
-      });
+  if (u && u.phone)
+  res.json({
+  err: '',
+  message: '',
+  phone: u.phone.substring(0, u.phone.length - 4),
+  country_code: u.country_code,
+  });
+  else
+  res.json({
+  err: !isEng ? 'İstifadəçi tapılmadı' : 'User not found',
+  message: '',
+  });
   });
 });
 
@@ -640,23 +638,23 @@ router.post('/get_user_email_and_phone', (req, res) => {
   const { fin, birth_date } = req.body;
   const isEng = (req.headers.language || '') === 'en';
   db.users.findOne({
-      attributes: ['phone', 'country_code', 'email'],
-      where: { fin },
-      include: [{ model: db.fin_data, required: false, where: { birth_date } }],
-    }).then((u) => {
-    if (u && u.phone)
-      res.json({
-        err: '',
-        message: '',
-        phone: u.phone.substring(0, u.phone.length - 4),
-        country_code: u.country_code,
-        email: u.email,
-      });
-    else
-      res.json({
-        err: !isEng ? 'İstifadəçi tapılmadı' : 'User not found',
-        message: '',
-      });
+  attributes: ['phone', 'country_code', 'email'],
+  where: { fin },
+  include: [{ model: db.fin_data, required: false, where: { birth_date } }],
+  }).then((u) => {
+  if (u && u.phone)
+  res.json({
+  err: '',
+  message: '',
+  phone: u.phone.substring(0, u.phone.length - 4),
+  country_code: u.country_code,
+  email: u.email,
+  });
+  else
+  res.json({
+  err: !isEng ? 'İstifadəçi tapılmadı' : 'User not found',
+  message: '',
+  });
   });
 });
 
@@ -684,76 +682,76 @@ router.post('/send_email_for_verification', (req, res) => {
   const code = 1; //Math.floor(Math.random() * (999999 - 0 + 1)) + 0;
   const message = `Elektron Tələbə Sənəd Qebulu Sistemi ucun qeydiyyat sifresi: ${code}`;
   db.users.findOne({ where: { email } }).then((user) => {
-    if (user) {
-      res.json({ err: 'Bu email ilə artıq qeydiyyatdan keçilib' });
-    } else {
-      db.phone_verification.findOne({
-          attributes: ['phone', 'country_code', 'number_wait_date'],
-          where: { phone },
-        }).then((pd) => {
-        if (pd) {
-          if (pd.number_wait_date) {
-            db.phone_verification.findOne({
-                attributes: ['id'],
-                where: {
-                  phone ,
-                  number_wait_date: { [Op.gte]: db.sequelize.fn('NOW') },
-                },
-              }).then((is) => {
-              if (!is) {
-                //smsSend(phone, message, () => { });
-                db.phone_verification.update(
-                    {
-                      code,
-                      updated_date: db.sequelize.fn('NOW'),
-                      number_wait_date: db.sequelize.literal(
-                        `NOW() + INTERVAL 2 MINUTE`
-                      ),
-                    },
-                    { where: { phone } }
-                  ).then(() => {});
-                res.json({
-                  err: '',
-                  message: `Təsdiq kodu ${email} adresinizə göndərildi` /*, csrf: req.new_csrf */,
-                });
-              } else {
-                res.json({ err: 'Yenidən göndərmək üçün gözləyin' });
-              }
-            });
-          } else {
-            //smsSend(phone, message, () => { });
+  if (user) {
+  res.json({ err: 'Bu email ilə artıq qeydiyyatdan keçilib' });
+  } else {
+  db.phone_verification.findOne({
+  attributes: ['phone', 'country_code', 'number_wait_date'],
+  where: { phone },
+  }).then((pd) => {
+  if (pd) {
+  if (pd.number_wait_date) {
+  db.phone_verification.findOne({
+  attributes: ['id'],
+  where: {
+  phone ,
+  number_wait_date: { [Op.gte]: db.sequelize.fn('NOW') },
+  },
+  }).then((is) => {
+  if (!is) {
+  //smsSend(phone, message, () => { });
+  db.phone_verification.update(
+  {
+  code,
+  updated_date: db.sequelize.fn('NOW'),
+  number_wait_date: db.sequelize.literal(
+  `NOW() + INTERVAL 2 MINUTE`
+  ),
+  },
+  { where: { phone } }
+  ).then(() => {});
+  res.json({
+  err: '',
+  message: `Təsdiq kodu ${email} adresinizə göndərildi` /*, csrf: req.new_csrf */,
+  });
+  } else {
+  res.json({ err: 'Yenidən göndərmək üçün gözləyin' });
+  }
+  });
+  } else {
+  //smsSend(phone, message, () => { });
 
-            db.phone_verification.update(
-                {
-                  code,
-                  updated_date: db.sequelize.fn('NOW'),
-                  number_wait_date: db.sequelize.literal(
-                    `NOW() + INTERVAL 2 MINUTE`
-                  ),
-                },
-                { where: { phone: email } }
-              ).then(() => {});
-            res.json({
-              err: '',
-              message: `Təsdiq kodu ${email} adresinizə göndərildi` /*, csrf: req.new_csrf */,
-            });
-          }
-        } else {
-          //smsSend(phone, message, () => { });
+  db.phone_verification.update(
+  {
+  code,
+  updated_date: db.sequelize.fn('NOW'),
+  number_wait_date: db.sequelize.literal(
+  `NOW() + INTERVAL 2 MINUTE`
+  ),
+  },
+  { where: { phone: email } }
+  ).then(() => {});
+  res.json({
+  err: '',
+  message: `Təsdiq kodu ${email} adresinizə göndərildi` /*, csrf: req.new_csrf */,
+  });
+  }
+  } else {
+  //smsSend(phone, message, () => { });
 
-          db.phone_verification.create({
-              phone,
-              code,
-              created_date: db.sequelize.fn('NOW'),
-              number_wait_date: db.sequelize.literal(`NOW() + INTERVAL 2 MINUTE`),
-            }).then(() => {});
-          res.json({
-            err: '',
-            message: `Təsdiq kodu ${email} adresinizə göndərildi` /*, csrf: req.new_csrf */,
-          });
-        }
-      });
-    }
+  db.phone_verification.create({
+  phone,
+  code,
+  created_date: db.sequelize.fn('NOW'),
+  number_wait_date: db.sequelize.literal(`NOW() + INTERVAL 2 MINUTE`),
+  }).then(() => {});
+  res.json({
+  err: '',
+  message: `Təsdiq kodu ${email} adresinizə göndərildi` /*, csrf: req.new_csrf */,
+  });
+  }
+  });
+  }
   });
 });
 
@@ -780,14 +778,14 @@ router.post('/send_email_for_verification', (req, res) => {
 router.post('/email_verification_code', (req, res) => {
   const { phone, code } = req.body;    // phone evezine "email" yazilmishdi amma niye gore bashadushmedim
   db.phone_verification.findOne({
-      attributes: ['phone'],
-      where: { phone, code },
-    }).then((result) => {
-    if (result && result.phone) {
-      res.json({ err: '', message: 'Email adresiniz təsdiqləndi' });
-    } else {
-      res.json({ err: 'Kod düzgün deyil' });
-    }
+  attributes: ['phone'],
+  where: { phone, code },
+  }).then((result) => {
+  if (result && result.phone) {
+  res.json({ err: '', message: 'Email adresiniz təsdiqləndi' });
+  } else {
+  res.json({ err: 'Kod düzgün deyil' });
+  }
   });
 });
 
@@ -811,7 +809,8 @@ router.post('/email_verification_code', (req, res) => {
  */
 //peshe
 router.get('/enterprises', authenticate, (req, res) => {
-  db.enterprises_31.findAll({ where: { deleted: 0 }, order: [['name', 'ASC']] }).then((rows) => res.json(rows));
+  db.enterprises_31.findAll({ where: { deleted: 0 }, 
+  order: [['name', 'ASC']] }).then((rows) => res.json(rows));
 });
 
 /**
@@ -833,7 +832,8 @@ router.get('/enterprises', authenticate, (req, res) => {
  *
  */
 router.get('/regions', authenticate, (req, res) => {
-  db.districts.findAll({ where: { deleted: 0 }, order: [['name', 'ASC']] }).then((rows) => res.json(rows));
+  db.districts.findAll({ where: { deleted: 0 }, 
+  order: [['name', 'ASC']] }).then((rows) => res.json(rows));
 });
 /**
  * @api {get} /main/specialty specialty
@@ -854,7 +854,8 @@ router.get('/regions', authenticate, (req, res) => {
  *
  */
 router.get('/specialty', authenticate, (req, res) => {
-  db.specialty_31.findAll({ where: { deleted: 0 }, order: [['name', 'ASC']] }).then((rows) => res.json(rows));
+  db.specialty_31.findAll({ where: { deleted: 0 }, 
+  order: [['name', 'ASC']] }).then((rows) => res.json(rows));
 });
 /**
  * @api {get} /main/education_base education_base
@@ -876,7 +877,7 @@ router.get('/specialty', authenticate, (req, res) => {
  */
 router.get('/education_base', authenticate, (req, res) => {
   db.education_base.findAll({ order: [['name', 'ASC']] }).then(
-    (result) => res.json(result)
+  (result) => res.json(result)
   );
 });
 /**
@@ -899,7 +900,7 @@ router.get('/education_base', authenticate, (req, res) => {
  */
 router.get('/material_base', authenticate, (req, res) => {
   db.material_base.findAll({ order: [['name', 'ASC']] }).then(
-    (result) => res.json(result)
+  (result) => res.json(result)
   );
 });
 /**
@@ -922,7 +923,7 @@ router.get('/material_base', authenticate, (req, res) => {
  */
 router.get('/teaching_language', authenticate, (req, res) => {
   db.teaching_language.findAll({ order: [['name', 'ASC']] }).then(
-    (result) => res.json(result)
+  (result) => res.json(result)
   );
 });
 /**
@@ -944,7 +945,8 @@ router.get('/teaching_language', authenticate, (req, res) => {
  *
  */
 router.get('/education_duration', authenticate, (req, res) => {
-  db.education_duration.findAll({ order: [['name', 'ASC']] }).then((result) => res.json(result));
+  db.education_duration.findAll({ 
+  order: [['name', 'ASC']] }).then((result) => res.json(result));
 });
 /**
  * @api {get} /main/universities universities
@@ -965,7 +967,8 @@ router.get('/education_duration', authenticate, (req, res) => {
  *
  */
 router.get('/universities', authenticate, (req, res) => {
-  db.universities.findAll({ group: ['name'], order: [['name', 'ASC']] }).then((result) => res.json(result));
+  db.universities.findAll({ group: ['name'], 
+  order: [['name', 'ASC']] }).then((result) => res.json(result));
 });
 /**
  * @api {get} /main/utis_schools utis_schools
@@ -987,7 +990,7 @@ router.get('/universities', authenticate, (req, res) => {
  */
 router.get('/utis_schools', authenticate, (req, res) => {
   db.utis_schools.findAll({ order: [['name', 'ASC']] }).then(
-    (result) => res.json(result)
+  (result) => res.json(result)
   );
 });
 /**
@@ -1009,7 +1012,8 @@ router.get('/utis_schools', authenticate, (req, res) => {
  *
  */
 router.get('/schools_new', authenticate, (req, res) => {
-  db.schools_new.findAll({ group: ['name'], order: [['name', 'ASC']] }).then((result) => res.json(result || []));
+  db.schools_new.findAll({ group: ['name'], 
+  order: [['name', 'ASC']] }).then((result) => res.json(result || []));
 });
 /**
  * @api {get} /main/uni_specialties uni_specialties
@@ -1030,7 +1034,8 @@ router.get('/schools_new', authenticate, (req, res) => {
  *
  */
 router.get('/uni_specialties', authenticate, (req, res) => {
-  db.uni_specialties.findAll({ group: ['name'], order: [['name', 'ASC']] }).then((result) => res.json(result));
+  db.uni_specialties.findAll({ group: ['name'], 
+  order: [['name', 'ASC']] }).then((result) => res.json(result));
 });
 /**
  * @api {get} /main/school_specialties school_specialties
@@ -1051,7 +1056,8 @@ router.get('/uni_specialties', authenticate, (req, res) => {
  *
  */
 router.get('/school_specialties', authenticate, (req, res) => {
-  db.school_specialties.findAll({ group: ['name'], order: [['name', 'ASC']] }).then((result) => res.json(result));
+  db.school_specialties.findAll({ group: ['name'], 
+  order: [['name', 'ASC']] }).then((result) => res.json(result));
 });
 
 /**
@@ -1075,7 +1081,8 @@ router.get('/school_specialties', authenticate, (req, res) => {
 router.post('/out_of_school_centers', authenticate, (req, res) => {
   // const { name } = req.body;
   // querySyncForMap(`SELECT * FROM out_of_school_centers  where  name=? ORDER BY name ASC`, [name]).then(result => res.json(result));
-  db.out_of_school_centers.findAll({ order: [['name', 'ASC']] }).then((result) => res.json(result));
+  db.out_of_school_centers.findAll({ 
+  order: [['name', 'ASC']] }).then((result) => res.json(result));
 });
 /**
  * @api {get} /main/country country
@@ -1098,7 +1105,7 @@ router.post('/out_of_school_centers', authenticate, (req, res) => {
 router.get('/country', (req, res) => {
   const langKey = (req.headers.language || '') === 'en' ? 'nameEn' : 'name';
   db.country.findAll({ order: [[langKey, 'ASC']] }).then(
-    (result) => res.json(result.map((r) => ({ ...r, name: r[langKey] })))
+  (result) => res.json(result.map((r) => ({ ...r, name: r[langKey] })))
   );
 });
 /**
@@ -1121,7 +1128,7 @@ router.get('/country', (req, res) => {
  */
 router.get('/subjects', authenticate, (req, res) => {
   db.subjects.findAll({ order: [['name', 'ASC']] }).then(
-    (result) => res.json(result)
+  (result) => res.json(result)
   );
 });
 /**
@@ -1144,7 +1151,7 @@ router.get('/subjects', authenticate, (req, res) => {
  */
 router.get('/scientific_type', authenticate, (req, res) => {
   db.scientific_type.findAll({ order: [['name', 'ASC']] }).then(
-    (result) => res.json(result)
+  (result) => res.json(result)
   );
 });
 /**
@@ -1168,15 +1175,15 @@ router.get('/scientific_type', authenticate, (req, res) => {
 router.get('/services', authenticate, (req, res) => {
   const langKey = (req.headers.language || '') === 'en' ? 'En' : '';
   db.services.findAll({ order: [['preference', 'ASC']] }).then(
-    (result) => {
-      res.json(
-        result.map((r) => ({
-          ...r,
-          title: r['title' + langKey],
-          description: r['description' + langKey],
-        }))
-      );
-    }
+  (result) => {
+  res.json(
+  result.map((r) => ({
+  ...r,
+  title: r['title' + langKey],
+  description: r['description' + langKey],
+  }))
+  );
+  }
   );
 });
 /**
@@ -1201,11 +1208,11 @@ router.get('/services', authenticate, (req, res) => {
 router.post('/service_left_bar', authenticate, (req, res) => {
   const { serviceName } = req.body;
   const langKey = (req.headers.language || '') === 'en' ? 'En' : '';
-    db.service_left_bar.findAll({
-      where: { service_name: serviceName },
-      order: [['id', 'ASC']],
-    }).then((result) =>
-    res.json(result.map((r) => ({ ...r, title: r['title' + langKey] })))
+  db.service_left_bar.findAll({
+  where: { service_name: serviceName },
+  order: [['id', 'ASC']],
+  }).then((result) =>
+  res.json(result.map((r) => ({ ...r, title: r['title' + langKey] })))
   );
 });
 
@@ -1229,16 +1236,16 @@ router.post('/service_left_bar', authenticate, (req, res) => {
  */
 router.get('/vacancies', authenticate, (req, res) => {
   axios
-    .get(
-      `${process.env.VACANCIES_HOST}:${
-        process.env.VACANCIES_PORT
-      }/api/vacancy/plans?teaching_year=${new Date().getFullYear() - 1}`,
-      {
-        headers: { authorization: 'Bearer ' + process.env.VACANCIES_TOKEN },
-        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-      }
-    )
-    .then(({ data }) => res.json(data));
+  .get(
+  `${process.env.VACANCIES_HOST}:${
+  process.env.VACANCIES_PORT
+  }/api/vacancy/plans?teaching_year=${new Date().getFullYear() - 1}`,
+  {
+  headers: { authorization: 'Bearer ' + process.env.VACANCIES_TOKEN },
+  httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+  }
+  )
+  .then(({ data }) => res.json(data));
 });
 
 /**
@@ -1265,9 +1272,9 @@ router.get('/notifications_by/:service/:fin', authenticate, (req, res) => {
 
   if (service)
   db.notifications.findAll({
-        where: { service, fin: fin || req.currentUser.fin },
-        order: [['id', 'DESC']],
-      }).then((result) => res.json(result));
+  where: { service, fin: fin || req.currentUser.fin },
+  order: [['id', 'DESC']],
+  }).then((result) => res.json(result));
   else res.json({ error: 'service tapilmadi' });
 });
 
@@ -1295,30 +1302,30 @@ router.get('/notifications_by/:service/:fin', authenticate, (req, res) => {
 router.get('/atis_enterprises', authenticate, (req, res) => {
   const langKey = (req.headers.language || '') === 'en' ? 'nameEn' : 'name';
 
-    db.atis_enterprises.findAll({
-      group: ['ATIS_ID'],
-      order: [['name', 'ASC']],
-      include: [
-        {
-          model: db.ent_sp_join,
-          required: false,
-          attributes: [
-            [
-              db.sequelize.fn('GROUP_CONCAT', Sequelize.col('specialty_ATIS_ID')),
-              'specialty_ATIS_ID',
-            ],
-          ],
-        },
-      ],
-    }).then((result) =>
-    res.json(
-      (result || []).map((e) => ({  // sadece result yazanda ishleyir amma bile ishlemir
-        ...e,
-        name: e[langKey],
-        specialty_ATIS_ID:
-          (e.specialty_ATIS_ID && e.specialty_ATIS_ID.split(',')) || [],
-      }))
-    )
+  db.atis_enterprises.findAll({
+  group: ['ATIS_ID'],
+  order: [['name', 'ASC']],
+  include: [
+  {
+  model: db.ent_sp_join,
+  required: false,
+  attributes: [
+  [
+  db.sequelize.fn('GROUP_CONCAT', Sequelize.col('specialty_ATIS_ID')),
+  'specialty_ATIS_ID',
+  ],
+  ],
+  },
+  ],
+  }).then((result) =>
+  res.json(
+  (result || []).map((e) => ({  // sadece result yazanda ishleyir amma bile ishlemir
+  ...e,
+  name: e[langKey],
+  specialty_ATIS_ID:
+  (e.specialty_ATIS_ID && e.specialty_ATIS_ID.split(',')) || [],
+  }))
+  )
   );
 });
 
@@ -1327,44 +1334,44 @@ router.post('/foreigner_enterprises', authenticate, (req, res) => {
   const isNull = Object.keys(req.body).length === 0;
   const langKey = (req.headers.language || '') === 'en' ? 'nameEn' : 'name';
   atisLogin((token) => {
-    if (token) {
-      const options = {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-        },
-        // timeout: process.env.TIMEOUT || 8000,
-        data: isNull
-          ? {}
-          : {
-              educationlevelid:
-                Number(EducationStageId) === 1 ? '' : EducationLevelId,
-              educationstageid: EducationStageId,
-              preparation: Number(preparation) === 1 ? true : false,
-            },
-        url: `${process.env.ATIS_HOST}/api/tq/institutions`,
-      };
-      axios(options)
-        .then((result) => {
-          res.json(
-            ((result.data || {}).institution || []).map((e) => ({
-              ATIS_ID: e.atidId,
-              name: e[langKey] || e.name,
-            }))
-          );
-        })
-        .catch((e) => {
-          if (e.response) {
-            console.log(e.response.data);
-          } else {
-            console.log(e);
-          }
-          if (Object.keys(e).length > 0) res.json([]);
-        });
-    } else {
-      res.json([]);
-    }
+  if (token) {
+  const options = {
+  method: 'GET',
+  headers: {
+  'Content-Type': 'application/json',
+  Authorization: 'Bearer ' + token,
+  },
+  // timeout: process.env.TIMEOUT || 8000,
+  data: isNull
+  ? {}
+  : {
+  educationlevelid:
+  Number(EducationStageId) === 1 ? '' : EducationLevelId,
+  educationstageid: EducationStageId,
+  preparation: Number(preparation) === 1 ? true : false,
+  },
+  url: `${process.env.ATIS_HOST}/api/tq/institutions`,
+  };
+  axios(options)
+  .then((result) => {
+  res.json(
+  ((result.data || {}).institution || []).map((e) => ({
+  ATIS_ID: e.atidId,
+  name: e[langKey] || e.name,
+  }))
+  );
+  })
+  .catch((e) => {
+  if (e.response) {
+  console.log(e.response.data);
+  } else {
+  console.log(e);
+  }
+  if (Object.keys(e).length > 0) res.json([]);
+  });
+  } else {
+  res.json([]);
+  }
   });
 });
 
@@ -1585,37 +1592,37 @@ router.get('/:table', authenticate, (req, res) => {
   const { table } = req.params;
   const langKey = (req.headers.language || '') === 'en' ? 'nameEn' : 'name';
   if (table) {
-    if (tables.includes(table)) {
-      db.table.findAll({ order: [['id', 'ASC']] }).then(
-        (result) => res.json(result.map((r) => ({ ...r, name: r[langKey] })))
-      );
-    } else if (atisTables.includes(table)) {
-      atisData(table, (data) => {
-        res.json(
-          ((data || {})[atisTablesKeys[table]] || []).map((e) => ({
-            e,
-            name: e[langKey] || e.name,
-            ATIS_ID: e.atisId,
-            specialization_ATIS_ID: e.specializationAtisId,
-            enterprise_ATIS_ID: e.institutionAtisId,
-            specialty_ATIS_ID: e.specialtyAtisId,
-            specialty_code: e.specialtyCode,
-            paymentTypeId: e.paymentTypeId,
-            educationLanguageId: e.educationLanguageId,
-            educationFormId: e.educationFormId,
-            EducationStageId: e.educationStageId,
-            educationLevelId: e.educationLevelId,
-            teachingYear: (e.teachingYear || '').split('/')[0],
-            entranceSpecialtyPaymentAmount: e.paymentAmount,
-            preparation_amount: e.preparationAmount,
-          }))
-        );
-      });
-    } else {
-      res.json({ error: 'table tapilmadi' });
-    }
+  if (tables.includes(table)) {
+  db.table.findAll({ order: [['id', 'ASC']] }).then(
+  (result) => res.json(result.map((r) => ({ ...r, name: r[langKey] })))
+  );
+  } else if (atisTables.includes(table)) {
+  atisData(table, (data) => {
+  res.json(
+  ((data || {})[atisTablesKeys[table]] || []).map((e) => ({
+  e,
+  name: e[langKey] || e.name,
+  ATIS_ID: e.atisId,
+  specialization_ATIS_ID: e.specializationAtisId,
+  enterprise_ATIS_ID: e.institutionAtisId,
+  specialty_ATIS_ID: e.specialtyAtisId,
+  specialty_code: e.specialtyCode,
+  paymentTypeId: e.paymentTypeId,
+  educationLanguageId: e.educationLanguageId,
+  educationFormId: e.educationFormId,
+  EducationStageId: e.educationStageId,
+  educationLevelId: e.educationLevelId,
+  teachingYear: (e.teachingYear || '').split('/')[0],
+  entranceSpecialtyPaymentAmount: e.paymentAmount,
+  preparation_amount: e.preparationAmount,
+  }))
+  );
+  });
   } else {
-    res.json({ error: 'table tapilmadi' });
+  res.json({ error: 'table tapilmadi' });
+  }
+  } else {
+  res.json({ error: 'table tapilmadi' });
   }
 });
 
@@ -1623,66 +1630,66 @@ module.exports =  router;
 
 const atisData = (key, callback) => {
   const params = {
-    foreigner_specialities: 'specialty',
-    foreigner_sub_specialities: 'childspecialty',
-    foreigner_sub_specializations: 'childspecialization',
-    foreigner_specializations: 'specialization',
+  foreigner_specialities: 'specialty',
+  foreigner_sub_specialities: 'childspecialty',
+  foreigner_sub_specializations: 'childspecialization',
+  foreigner_specializations: 'specialization',
   };
 
   atisLogin((token) => {
-    if (token) {
-      axios({
-        method: 'GET',
-        url: `${process.env.ATIS_HOST}/api/tq/${params[key]}/paymentamounts`,
-        headers: {
-          Authorization: 'Bearer ' + token,
-        },
-      })
-        .then((result) => {
-          callback(result.data);
-        })
-        .catch((e) => {
-          if (e.response) {
-            console.log(e.response.data);
-          } else {
-            console.log(e);
-          }
-          if (Object.keys(e).length > 0) callback([]);
-        });
-    } else {
-      callback([]);
-    }
+  if (token) {
+  axios({
+  method: 'GET',
+  url: `${process.env.ATIS_HOST}/api/tq/${params[key]}/paymentamounts`,
+  headers: {
+  Authorization: 'Bearer ' + token,
+  },
+  })
+  .then((result) => {
+  callback(result.data);
+  })
+  .catch((e) => {
+  if (e.response) {
+  console.log(e.response.data);
+  } else {
+  console.log(e);
+  }
+  if (Object.keys(e).length > 0) callback([]);
+  });
+  } else {
+  callback([]);
+  }
   });
 };
 
 const atisLogin = (callback) => {
   const postData = querystring.stringify({
-    UserName: 'EDUMedia0508',
-    Password: 'n)/m<ySRNs7Af38n',
-    SecretKey: 'AtisI#_EB-R$T]2EKG!Key',
+  UserName: 'EDUMedia0508',
+  Password: 'n)/m<ySRNs7Af38n',
+  SecretKey: 'AtisI#_EB-R$T]2EKG!Key',
   });
 
   const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    data: postData,
-    timeout: process.env.TIMEOUT || 8000,
-    url: `${process.env.ATIS_HOST}/api/tq/login`,
+  method: 'POST',
+  headers: {
+  'Content-Type': 'application/x-www-form-urlencoded',
+  },
+  data: postData,
+  timeout: process.env.TIMEOUT || 8000,
+  url: `${process.env.ATIS_HOST}/api/tq/login`,
   };
 
   axios(options)
-    .then((login_result) => {
-      //console.log('login_result: ', login_result.data)
-      if (((login_result || {}).data || {}).access_token) {
-        callback(((login_result || {}).data || {}).access_token);
-      } else {
-        callback(false);
-      }
-    })
-    .catch((e) => {
-      console.log('login error: ', e);
-      if (Object.keys(e).length > 0) callback(false);
-    });
+  .then((login_result) => {
+  //console.log('login_result: ', login_result.data)
+  if (((login_result || {}).data || {}).access_token) {
+  callback(((login_result || {}).data || {}).access_token);
+  } else {
+  callback(false);
+  }
+  })
+  .catch((e) => {
+  console.log('login error: ', e);
+  if (Object.keys(e).length > 0) callback(false);
+  });
 };

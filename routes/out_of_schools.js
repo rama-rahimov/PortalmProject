@@ -30,7 +30,7 @@ router.get('/check_by_id/:id', authenticate, (req, res) => {
     const { id } = req.params;  
     db.appeals_out_of_school.findAll({attributes:[[db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']], 
     where:{user_id:req.currentUser.id, children_id:id, status:{[Op.notIn]:[0]}}}).then(apply => { 
-        res.json(Number((apply || {}).count || 0) == 0);
+    res.json(Number((apply || {}).count || 0) == 0);
     });
 });
 
@@ -55,12 +55,13 @@ router.get('/check_by_id/:id', authenticate, (req, res) => {
 router.get('/by_id/:id', authenticate, (req, res) => {
     const { id } = req.params; 
     db.appeals_out_of_school.findOne({where:{user_id:req.currentUser.id, id}}).then(apply => {
-        if (apply)                                                  
-        db.appealed_out_of_schools.findAll({where:{appeals_out_of_school_id:apply.id}, include:[{model:db.out_of_school_centers, required:false}]}).then(schools => {
-                res.json({ ...apply, out_of_school_centers: schools || [] });
-            });
-        else
-            res.json({});
+    if (apply)                                                  
+    db.appealed_out_of_schools.findAll({where:{appeals_out_of_school_id:apply.id}, 
+    include:[{model:db.out_of_school_centers, required:false}]}).then(schools => {
+    res.json({ ...apply, out_of_school_centers: schools || [] });
+    });
+    else
+    res.json({});
     });
 });
 
@@ -83,22 +84,24 @@ router.get('/by_id/:id', authenticate, (req, res) => {
  */
 
 router.get('/all', authenticate, (req, res) => { 
-    db.appeals_out_of_school.findAll({attributes:[['id', 'a_id'], ['status', 'n_status']], where:{user_id:req.currentUser.id},  include:[{model:db.appealed_out_of_schools, required:false, attributes:[['id', 'n_id']], include:[{model:db.out_of_school_centers, required:false}]}]}).then(appeals => {
-        res.json(appeals);
+    db.appeals_out_of_school.findAll({attributes:[['id', 'a_id'], ['status', 'n_status']], where:{user_id:req.currentUser.id},  
+    include:[{model:db.appealed_out_of_schools, required:false, attributes:[['id', 'n_id']], 
+    include:[{model:db.out_of_school_centers, required:false}]}]}).then(appeals => {
+    res.json(appeals);
     });
 });
 
 
 router.get('/allOrgInfo',/* authenticate,*/(req, res) => {
     sendDataToMK('/mkApiOrgAndStudent/allOrgInfo', null, (result) => {
-        res.json(result);
+    res.json(result);
     });
 });
 
 router.get('/orgAndGroupInfoByCode/:orgCode',/* authenticate, */(req, res) => {
     const { orgCode } = req.params;
     sendDataToMK(`/mkApiOrgAndStudent/orgAndGroupInfoByCode?orgCode=${orgCode}`, null, (result) => {
-        res.json(result);
+    res.json(result);
     });
 });
 
@@ -144,57 +147,57 @@ router.post('/save', authenticate, (req, res) => {  // buna mutleq qayidib arash
     const { out_of_school_centers, first_name, last_name, father_name, birth_date, actual_address, genderId, region, grade } = dataForm;
 
     saveApply(status, step, dataForm, req.currentUser.id, children_id, (result) => {
-        if (result.id)  
-        db.appealed_out_of_schools.destroy({where:{appeals_out_of_school_id:result.id}}).then((out_of_school_centers) => {
-                out_of_school_centers.flatMap(item => {
-                    item.appeals_out_of_school_id = result.id ;
-                });
-                db.appealed_out_of_schools.bulkCreate(out_of_school_centers).then(() => {
-                    if (Number(status) === 1) {
-                        out_of_school_centers.flatMap(item => {
-                            item.service = 'out_of_school' ;
-                            item.fin = item.id ;
-                            item.title = 1 ;
-                        });
-                        db.notifications.bulkCreate(out_of_school_centers).then(() => {
-                            sendDataToMK('/mkApiOrgAndStudent/saveStudentInfo', {
-                                "global_id": result.id,
-                                "studentName": first_name,
-                                "studentSurname": last_name,
-                                "studentMiddleName": father_name,
-                                "male": Number(genderId) === 1 ? "Kişi" : "Qadın",
-                                "birthDate": moment(birth_date, "DD.MM.YYYY").format("YYYY-MM-DD"),
-                                "studentStatus": Number(grade || "") > 0 ? "Məktəbli" : getAge(birth_date) <= 6 ? "Məktəbəqədər" : "Digər",
-                                "address": actual_address,
-                                "relativeType": Number(req.currentUser.genderId) === 1 ? "Ata" : "Ana",
-                                "relativeSurname": req.currentUser.last_name,
-                                "relativeName": req.currentUser.first_name,
-                                "relativeMiddleName": req.currentUser.father_name,
-                                "mobile": req.currentUser.country_code + req.currentUser.phone,
-                                "relativeMail": req.currentUser.email,
-                                "eduClass": grade,
-                                "tendency": (out_of_school_centers || []).map(item => ({ id: item.out_of_school_id, name: item.tendency_name }))
-                            }, (api_result) => { 
-                                db.appeals_out_of_school.update({ isSend: api_result.successful ? 1 : 0 }, { where:{ id: result.id } }).then(() => {
-                                    res.json(result);
-                                });
-                            }, "POST");
-                        });
-                    } else {
-                        out_of_school_centers.flatMap(item => {
-                            item.service = 'out_of_school' ;
-                            item.fin = item.id ;
-                            item.title = 1 ;
-                        });
+    if (result.id)  
+    db.appealed_out_of_schools.destroy({where:{appeals_out_of_school_id:result.id}}).then((out_of_school_centers) => {
+    out_of_school_centers.flatMap(item => {
+    item.appeals_out_of_school_id = result.id ;
+    });
+    db.appealed_out_of_schools.bulkCreate(out_of_school_centers).then(() => {
+    if (Number(status) === 1) {
+    out_of_school_centers.flatMap(item => {
+    item.service = 'out_of_school' ;
+    item.fin = item.id ;
+    item.title = 1 ;
+    });
+    db.notifications.bulkCreate(out_of_school_centers).then(() => {
+    sendDataToMK('/mkApiOrgAndStudent/saveStudentInfo', {
+    "global_id": result.id,
+    "studentName": first_name,
+    "studentSurname": last_name,
+    "studentMiddleName": father_name,
+    "male": Number(genderId) === 1 ? "Kişi" : "Qadın",
+    "birthDate": moment(birth_date, "DD.MM.YYYY").format("YYYY-MM-DD"),
+    "studentStatus": Number(grade || "") > 0 ? "Məktəbli" : getAge(birth_date) <= 6 ? "Məktəbəqədər" : "Digər",
+    "address": actual_address,
+    "relativeType": Number(req.currentUser.genderId) === 1 ? "Ata" : "Ana",
+    "relativeSurname": req.currentUser.last_name,
+    "relativeName": req.currentUser.first_name,
+    "relativeMiddleName": req.currentUser.father_name,
+    "mobile": req.currentUser.country_code + req.currentUser.phone,
+    "relativeMail": req.currentUser.email,
+    "eduClass": grade,
+    "tendency": (out_of_school_centers || []).map(item => ({ id: item.out_of_school_id, name: item.tendency_name }))
+    }, (api_result) => { 
+    db.appeals_out_of_school.update({ isSend: api_result.successful ? 1 : 0 }, { where:{ id: result.id } }).then(() => {
+    res.json(result);
+    });
+    }, "POST");
+    });
+    } else {
+    out_of_school_centers.flatMap(item => {
+    item.service = 'out_of_school' ;
+    item.fin = item.id ;
+    item.title = 1 ;
+    });
 
-                        db.notifications.bulkCreate(out_of_school_centers).then(() => {
-                            res.json(result);
-                        });
-                    }
-                });
-            });
-        else
-            res.json(result);
+    db.notifications.bulkCreate(out_of_school_centers).then(() => {
+    res.json(result);
+    });
+    }
+    });
+    });
+    else
+    res.json(result);
     });
 });
 
@@ -202,62 +205,62 @@ module.exports = router;
 
 function saveApply(status, step, dataForm, user_id, children_id, callback) {
     const {
-        first_name, last_name, father_name, birth_date, address, actual_address, genderId,
-        city, region, current_enterprise, grade, teaching_language, parent_type, id,
-        health_cert_date, health_cert_no, health_cert_scan, photo_3x4_scan, birth_cert_scan
+    first_name, last_name, father_name, birth_date, address, actual_address, genderId,
+    city, region, current_enterprise, grade, teaching_language, parent_type, id,
+    health_cert_date, health_cert_no, health_cert_scan, photo_3x4_scan, birth_cert_scan
     } = dataForm ;
     db.appeals_out_of_school.findOne({attributes:['id'], where:{ user_id,  id}}).then(apply => {
-        if ((apply || {}).id) { 
-            db.appeals_out_of_school.update({
-                first_name, last_name, father_name, birth_date, address, actual_address, genderId, step,
-                city, region, current_enterprise, grade, teaching_language, status, user_id, children_id,
-                health_cert_date, health_cert_no, health_cert_scan, photo_3x4_scan, birth_cert_scan, parent_type
-            }, { where:{ id: apply.id } }).then((applyId) => {
-                if (applyId.error) {
-                    callback({ error: applyId.error });
-                } else {
-                    callback({ id: apply.id });
-                }
-            });
-        } else {
-            db.appeals_out_of_school.create({
-                first_name, last_name, father_name, birth_date, address, actual_address, genderId, step,
-                city, region, current_enterprise, grade, teaching_language, status, children_id, parent_type,
-                health_cert_date, health_cert_no, health_cert_scan, photo_3x4_scan, birth_cert_scan, user_id
-            }).then((applyId) => {
-                if (applyId.error) {
-                    callback({ error: applyId.error });
-                } else {
-                    callback({ id: applyId });
-                }
-            });
-        }
+    if ((apply || {}).id) { 
+    db.appeals_out_of_school.update({
+    first_name, last_name, father_name, birth_date, address, actual_address, genderId, step,
+    city, region, current_enterprise, grade, teaching_language, status, user_id, children_id,
+    health_cert_date, health_cert_no, health_cert_scan, photo_3x4_scan, birth_cert_scan, parent_type
+    }, { where:{ id: apply.id } }).then((applyId) => {
+    if (applyId.error) {
+    callback({ error: applyId.error });
+    } else {
+    callback({ id: apply.id });
+    }
+    });
+    } else {
+    db.appeals_out_of_school.create({
+    first_name, last_name, father_name, birth_date, address, actual_address, genderId, step,
+    city, region, current_enterprise, grade, teaching_language, status, children_id, parent_type,
+    health_cert_date, health_cert_no, health_cert_scan, photo_3x4_scan, birth_cert_scan, user_id
+    }).then((applyId) => {
+    if (applyId.error) {
+    callback({ error: applyId.error });
+    } else {
+    callback({ id: applyId });
+    }
+    });
+    }
     });
 }
 
 
 const sendDataToMK = (url, postData, callback, method = "GET") => {
     const options = {
-        method,
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        timeout: process.env.TIMEOUT || 8000,
-        url: `${process.env.MK_HOST}${url}`
+    method,
+    headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    timeout: process.env.TIMEOUT || 8000,
+    url: `${process.env.MK_HOST}${url}`
     };
     if (postData) {
-        options.data = postData;
+    options.data = postData;
     }
 
     axios(options).then(result => {
-        if ((result || {}).data) {
-            callback((result || {}).data);
-        } else {
-            callback(false);
-        }
+    if ((result || {}).data) {
+    callback((result || {}).data);
+    } else {
+    callback(false);
+    }
     }).catch(e => {
-        console.log('MK error: ', e)
-        if (Object.keys(e).length > 0)
-            callback(false)
+    console.log('MK error: ', e)
+    if (Object.keys(e).length > 0)
+    callback(false)
     });
 }

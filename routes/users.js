@@ -58,53 +58,54 @@ router.post("/", (req, res) => {
     fin = docType + fin;
   }*/  
   if (email) { 
-    db.users.findOne({attributes:['id'], where: {[Op.or]: [{ email }, { fin },({phone, country_code})]}}).then(has_user => {
-      if (has_user) {
-        res.json({ success: false, err: !isEng ? 'İstifadəçi sistemdə var.' : 'The user is in the system.' });
-      } else {
-        db.phone_verification.findOne({attributes:['id'], where:{phone, country_code, verify:1}}).then(verify => {
-          if (!verify) {
-            res.json({ success: false, err: !isEng ? 'Nömrə təsdiq edilməyib.' : 'The number has not been confirmed.' });
-          } else {
-            const passwordHash = setPassword(password);
-            db.users.create({email, phone, country_code, fin, citizenshipId, password: passwordHash}).then(user => { // qebula gonder -> user.insertId, fin
-              if (user.error) {
-                //console.log("user_insert_error", user.error);
-                res.json({ success: false, err: !isEng ? 'Xəta baş verdi.' : 'An error occurred.' });
-              } else {
-                if (Number(citizenshipId) > 2) {
-                  db.fin_data.findOne({attributes:['fin'], where:{fin}}).then(check_fin => {
-                    if (!check_fin) {
-                      db.fin_data.create({fin, first_name, last_name, father_name, birth_date, gender, series, number, giving_authority, giving_date, exp_date, district, born_country, citizenship, address, image, social_status}).then(fin_data => {
-                        if (fin_data.error) {
-                          //console.log("fin_data_insert_error", user.error);
-                          res.json({ success: false, err: !isEng ? 'Xəta baş verdi.' : 'An error occurred.' });
-                        } else {
-                          res.json({ success: true, message: !isEng ? 'Qeydiyyat uğurla tamamlandı!' : 'Registration completed successfully!' });
-                        }
-                      });
-                    } else { 
-                      db.fin_data.update({first_name, last_name, father_name, birth_date, gender, series, number, giving_authority, giving_date, exp_date, district, born_country, citizenship, address, image, social_status}, {where:{fin}}).then(fin_data => {
-                        if (fin_data.error) {
-                          //console.log("fin_data_insert_error", fin_data.error);
-                          res.json({ success: false, err: !isEng ? 'Xəta baş verdi.' : 'An error occurred.' });
-                        } else {
-                          res.json({ success: true, message: !isEng ? 'Qeydiyyat uğurla tamamlandı!' : 'Registration completed successfully!' });
-                        }
-                      });
-                    }
-                  });
-                } else {
-                  res.json({ success: true, message: !isEng ? 'Qeydiyyat uğurla tamamlandı!' : 'Registration completed successfully!' });
-                }
-              }
-            });
-          }
-        });
-      }
-    });
+  db.users.findOne({attributes:['id'], where: {[Op.or]: [{ email }, { fin },({phone, country_code})]}}).then(has_user => {
+  if (has_user) {
+  res.json({ success: false, err: !isEng ? 'İstifadəçi sistemdə var.' : 'The user is in the system.' });
   } else {
-    res.json({ success: false, err: !isEng ? 'Email boş ola bilməz.' : 'Email cannot be empty.' }) ;
+  db.phone_verification.findOne({attributes:['id'], where:{phone, country_code, verify:1}}).then(verify => {
+  if (!verify) {
+  res.json({ success: false, err: !isEng ? 'Nömrə təsdiq edilməyib.' : 'The number has not been confirmed.' });
+  } else {
+  const passwordHash = setPassword(password);
+  db.users.create({email, phone, country_code, fin, citizenshipId, password: passwordHash}).then(user => { // qebula gonder -> user.insertId, fin
+  if (user.error) {
+  //console.log("user_insert_error", user.error);
+  res.json({ success: false, err: !isEng ? 'Xəta baş verdi.' : 'An error occurred.' });
+  } else {
+  if (Number(citizenshipId) > 2) {
+  db.fin_data.findOne({attributes:['fin'], where:{fin}}).then(check_fin => {
+  if (!check_fin) {
+  db.fin_data.create({fin, first_name, last_name, father_name, birth_date, gender, series, number, giving_authority, 
+  giving_date, exp_date, district, born_country, citizenship, address, image, social_status}).then(fin_data => {
+  if (fin_data.error) {
+  //console.log("fin_data_insert_error", user.error);
+  res.json({ success: false, err: !isEng ? 'Xəta baş verdi.' : 'An error occurred.' });
+  } else {
+  res.json({ success: true, message: !isEng ? 'Qeydiyyat uğurla tamamlandı!' : 'Registration completed successfully!' });
+  }
+  });
+  } else { 
+  db.fin_data.update({first_name, last_name, father_name, birth_date, gender, series, number, giving_authority, giving_date, exp_date, district, born_country, citizenship, address, image, social_status}, {where:{fin}}).then(fin_data => {
+  if (fin_data.error) {
+  //console.log("fin_data_insert_error", fin_data.error);
+  res.json({ success: false, err: !isEng ? 'Xəta baş verdi.' : 'An error occurred.' });
+  } else {
+  res.json({ success: true, message: !isEng ? 'Qeydiyyat uğurla tamamlandı!' : 'Registration completed successfully!' });
+  }
+  });
+  }
+  });
+  } else {
+  res.json({ success: true, message: !isEng ? 'Qeydiyyat uğurla tamamlandı!' : 'Registration completed successfully!' });
+  }
+  }
+  });
+  }
+  });
+  }
+  });
+  } else {
+  res.json({ success: false, err: !isEng ? 'Email boş ola bilməz.' : 'Email cannot be empty.' }) ;
   }
 });
 
@@ -128,12 +129,12 @@ router.post("/", (req, res) => {
 
 router.get("/current_user", authenticate, (req, res) => {
   if (req.currentUser) {
-    res.json({
-       user: req.currentUser,
-        token: generateJWT(req.currentUser)
-    });
+  res.json({
+  user: req.currentUser,
+  token: generateJWT(req.currentUser)
+  });
   } else {
-    res.json(false);
+  res.json(false);
   }
 });
 
@@ -158,7 +159,7 @@ router.get("/current_user", authenticate, (req, res) => {
 router.get('/check_email/:email', (req, res) => {
   const { email } = req.params; 
   db.users.findOne({where:{email}}).then(user => {
-    res.json(!!user);
+  res.json(!!user);
   });
 });
 
@@ -186,7 +187,7 @@ router.get('/check_fin/:fin', (req, res) => {
     res.json(!!user);
   });*/ 
   db.users.findOne({where:{fin}}).then(user => {
-    res.json(!!user);
+  res.json(!!user);
   });
 });
 
@@ -220,22 +221,23 @@ router.post('/reset_pass', (req, res) => {
   const isEng = (req.headers.language || "") === "en";
   const { email, phone_verification_code, password, confirm_password } = req.body;
   db.users.findOne({where:{email}}).then(u => {
-    if (u.phone)
-      db.phone_verification.findOne({attributes:['phone', 'country_code', 'number_wait_date'], where:{phone: u.phone, country_code: u.country_code, code:phone_verification_code}}).then(result => {
-        if (result && result.phone) { 
-          if (password === confirm_password) {
-            db.users.update({password:setPassword(password), asanLogin:0}, {where:{email}}).then(() => {
-              res.json({ message: !isEng ? 'Şifrəniz uğurla dəyişdirildi!' : 'Your password has been successfully changed!' });
-            });
-          } else {
-            res.json({ err: !isEng ? 'Şifrəni düzgün daxil edin!' : 'Enter the password correctly!' });
-          }
-        } else {
-          res.json({ err: !isEng ? 'Kod düzgün deyil' : 'Code is incorrect' });
-        }
-      });
-    else
-      res.json({ err: !isEng ? 'İsifadəçi tapılmadı' : 'User not found', message: '' });
+  if (u.phone)
+  db.phone_verification.findOne({attributes:['phone', 'country_code', 'number_wait_date'], 
+  where:{phone: u.phone, country_code: u.country_code, code:phone_verification_code}}).then(result => {
+  if (result && result.phone) { 
+  if (password === confirm_password) {
+  db.users.update({password:setPassword(password), asanLogin:0}, {where:{email}}).then(() => {
+  res.json({ message: !isEng ? 'Şifrəniz uğurla dəyişdirildi!' : 'Your password has been successfully changed!' });
+  });
+  } else {
+  res.json({ err: !isEng ? 'Şifrəni düzgün daxil edin!' : 'Enter the password correctly!' });
+  }
+  } else {
+  res.json({ err: !isEng ? 'Kod düzgün deyil' : 'Code is incorrect' });
+  }
+  });
+  else
+  res.json({ err: !isEng ? 'İsifadəçi tapılmadı' : 'User not found', message: '' });
   });
 });
 
@@ -263,17 +265,17 @@ router.post('/email_update', authenticate, (req, res) => {
   const { email, old_password } = req.body;
   const user_id = req.currentUser.id; 
   db.users.findOne({where:{id:user_id}}).then((check) => {
-    if (check && isValidPassword(old_password, check.password))
-      db.users.findAll({attributes:[[db.sequelize.fn('COUNT', Sequelize.col('id')), 'count']], where:{email}}).then(u => {
-        if (Object.entries(u)[0][0] === '0')
-          db.users.update({email}, {where:{id:user_id}}).then(() => {
-            res.json({ message: !isEng ? 'E-poçt uğurla dəyişdirildi!' : 'Email changed successfully!' });
-          });
-        else
-          res.json({ err: !isEng ? 'E-poçt istifadə edilir' : 'Email is used', message: '' });
-      });
-    else
-      res.json({ err: !isEng ? 'Köhnə şifrənizi səhv daxil etmisiniz!' : 'You entered your old password incorrectly!', message: '' })
+  if (check && isValidPassword(old_password, check.password))
+  db.users.findAll({attributes:[[db.sequelize.fn('COUNT', Sequelize.col('id')), 'count']], where:{email}}).then(u => {
+  if (Object.entries(u)[0][0] === '0')
+  db.users.update({email}, {where:{id:user_id}}).then(() => {
+  res.json({ message: !isEng ? 'E-poçt uğurla dəyişdirildi!' : 'Email changed successfully!' });
+  });
+  else
+  res.json({ err: !isEng ? 'E-poçt istifadə edilir' : 'Email is used', message: '' });
+  });
+  else
+  res.json({ err: !isEng ? 'Köhnə şifrənizi səhv daxil etmisiniz!' : 'You entered your old password incorrectly!', message: '' })
   });
 });
 
@@ -301,32 +303,32 @@ router.post('/phone_number_update', authenticate, (req, res) => {
   const user_id = req.currentUser.id;  
   const isEng = (req.headers.language || "") === "en";
   db.users.findOne({where:{id:user_id}}).then((check) => {
-    if (check && isValidPassword(old_password, check.password))
-      db.users.findOne({attributes:['phone'], where:{phone, country_code}}).then(user => {
-        if (user) {
-          res.json({ err: !isEng ? 'Bu nömrə ilə artıq qeydiyyatdan keçilib' : 'It is already registered with this number' });
-        } else {
-          db.phone_verification.findOne({attributes:['id', 'count', 'code'], where:{phone, country_code, verify:1, count:0}}).then(result => {
-            if (result && result.id) {
-              if (Number(result.count || 0) < 5 && String(result.code) === String(phone_verification_code)) {
-                db.users.update({phone, country_code}, {where:{id: user_id}}).then(() => {
-                  res.json({ err: '', message: !isEng ? 'Nömrəniz uğurla dəyişdirildi' : 'Number changed successfully!' });
-                });
-              } else {
-                if (Number(result.count || 0) < 5) {
-                  res.json({ err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect' });
-                } else {
-                  res.json({ err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.', message: '' });
-                }
-              }
-            } else {
-              res.json({ err: !isEng ? 'Kod düzgün deyil2' : 'The code is incorrect' });
-            }
-          });
-        }
-      });
-    else
-      res.json({ err: !isEng ? 'Köhnə şifrənizi səhv daxil etmisiniz!' : 'You entered your old password incorrectly!', message: '' })
+  if (check && isValidPassword(old_password, check.password))
+  db.users.findOne({attributes:['phone'], where:{phone, country_code}}).then(user => {
+  if (user) {
+  res.json({ err: !isEng ? 'Bu nömrə ilə artıq qeydiyyatdan keçilib' : 'It is already registered with this number' });
+  } else {
+  db.phone_verification.findOne({attributes:['id', 'count', 'code'], where:{phone, country_code, verify:1, count:0}}).then(result => {
+  if (result && result.id) {
+  if (Number(result.count || 0) < 5 && String(result.code) === String(phone_verification_code)) {
+  db.users.update({phone, country_code}, {where:{id: user_id}}).then(() => {
+  res.json({ err: '', message: !isEng ? 'Nömrəniz uğurla dəyişdirildi' : 'Number changed successfully!' });
+  });
+  } else {
+  if (Number(result.count || 0) < 5) {
+  res.json({ err: !isEng ? 'Kod düzgün deyil' : 'The code is incorrect' });
+  } else {
+  res.json({ err: !isEng ? 'Limit aşıldı.' : 'Limit exceeded.', message: '' });
+  }
+  }
+  } else {
+  res.json({ err: !isEng ? 'Kod düzgün deyil2' : 'The code is incorrect' });
+  }
+  });
+  }
+  });
+  else
+  res.json({ err: !isEng ? 'Köhnə şifrənizi səhv daxil etmisiniz!' : 'You entered your old password incorrectly!', message: '' })
   });
 });
 
@@ -352,16 +354,16 @@ router.post('/password_update', authenticate, (req, res) => {
   const { password, old_password } = req.body;
   const user_id = req.currentUser.id;
   if ((password || "").length > 5) 
-    db.users.findOne({where:{id:user_id}}).then(check => {
-      if (check && isValidPassword(old_password, check.password))
-        db.users.update({password:setPassword(password)}, {where:{id:user_id}}).then(() => {
-          res.json({ message: !isEng ? 'Şifrəniz uğurla dəyişdirildi!' : 'Your password has been successfully changed!' });
-        });
-      else
-        res.json({ err: !isEng ? 'Köhnə şifrənizi səhv daxil etmisiniz!' : 'You entered your old password incorrectly!', message: '' })
-    });
+  db.users.findOne({where:{id:user_id}}).then(check => {
+  if (check && isValidPassword(old_password, check.password))
+  db.users.update({password:setPassword(password)}, {where:{id:user_id}}).then(() => {
+  res.json({ message: !isEng ? 'Şifrəniz uğurla dəyişdirildi!' : 'Your password has been successfully changed!' });
+  });
   else
-    res.json({ err: !isEng ? 'Şifrəniz minimum 6 xarakter olmalıdır!' : 'Your password must be at least 6 characters!', message: '' });
+  res.json({ err: !isEng ? 'Köhnə şifrənizi səhv daxil etmisiniz!' : 'You entered your old password incorrectly!', message: '' })
+  });
+  else
+  res.json({ err: !isEng ? 'Şifrəniz minimum 6 xarakter olmalıdır!' : 'Your password must be at least 6 characters!', message: '' });
 });
 
 module.exports = router ;
