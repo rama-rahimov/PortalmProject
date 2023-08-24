@@ -65,6 +65,9 @@ db.informal_edu_specialty_modules.belongsTo(db.informal_edu_module_documents);
 db.atis_enterprises.hasMany(db.student_appeals);
 db.student_appeals.belongsTo(db.atis_enterprises);
 
+db.additional_educations.hasMany(db.additional_educations_private_data, {foreignKey: { field: 'additional_education_id' }});
+db.additional_educations_private_data.belongsTo(db.additional_educations);
+
 db.informal_edu_specialty_modules.hasMany(db.informal_edu_status_messages);
 db.informal_edu_status_messages.belongsTo(db.informal_edu_specialty_modules);
 

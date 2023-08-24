@@ -10,15 +10,18 @@ router.get('/getUser/:fin', authenticate, (req, res) => {
   const { fin } = req.params;
   const isAdmin = Number(req.currentUser.role) === 10 ; 
   if (isAdmin) { 
-  db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{fin}, include:[{model:db.fin_data, required:false}]}).then(async user => {
+  db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{fin}, 
+  include:[{model:db.fin_data, required:false}]}).then(async user => {
   const child = await db.children.findOne({where:{fin}});
   if(!child){
   await db.children.create({fin, user_id:user.id, type: 2});
   }
   await db.fin_data.update({children_fin:fin}, {where:{fin}});
-  db.children.findOne({where:{fin, deleted:0}, include:[{model:db.fin_data, required:false}]}).then(children => {
+  db.children.findOne({where:{fin, deleted:0}, 
+    include:[{model:db.fin_data, required:false}]}).then(children => {
   if (children && children.user_id == (user || {}).id) 
-  db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{id:children.user_id}, include:[{model:db.fin_data, required: false}]}).then(children_user => {
+  db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], 
+  where:{id:children.user_id}, include:[{model:db.fin_data, required: false}]}).then(children_user => {
   res.json({ user: user ? toAuthJSON(user) : null, children, children_user: children_user ? toAuthJSON(children_user) : null });
   });
   else

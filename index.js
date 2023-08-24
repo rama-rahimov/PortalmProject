@@ -14,6 +14,7 @@ const { cl, getfile, file, fileName } = require('./middlewares/helper.js');
 
 // import mySoapServices from "./routes/soap_sever_func";
 
+const additional_education = require("./routes/additional_education") ;
 const auth = require('./routes/auth.js');
 const edu_docs = require('./routes/edu_docs.js');
 const main = require('./routes/main.js');
@@ -72,6 +73,7 @@ app.use('/api/student_apply_new', student_apply_new);
 app.use('/api/certification', certification);
 app.use('/api/admin', admin);
 app.use('/api/debt', debt);
+app.use("/api/additional_education", additional_education);
 
 /** QFIT - Admin panel */
 

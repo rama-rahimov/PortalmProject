@@ -167,7 +167,7 @@ const update = async (table, data, credentials, callback) => {
 
 const insertList = async (table, datas, datakeys, extraData, callback) => {
   if(typeof(table) === 'string'){
-    const keys = datakeys.join(',');
+  const keys = datakeys.join(',');
   const valuesK = datas.map((data) => datakeys.map(k => (extraData[k] || String(extraData[k]) === '0' || data[k] || String(data[k]) === '0') ? "?" : "DEFAULT").join(',')).join('),(');
   const values = datas.flatMap(data => datakeys.map(key => (extraData[key] || String(extraData[key]) === '0') ? extraData[key] : ((data[key] || String(data[key]) === '0') ? data[key] : "")).filter(v => (v || String(v) === '0')));
   const query = `INSERT INTO ${table} (${keys}) VALUES (${valuesK})`;

@@ -443,24 +443,32 @@ function saveVacancyApply(status, step, dataForm, user_id, callback) {
     });
 }
 
+// function saveArrayToVacancyApply(vacancy_appeals_id, user_id, arrayData, table_name, datakeys, callback, extra) {
+//     arrayData = (arrayData || []).filter(d => Object.keys(d).length > 0);
+//     if (arrayData.length > 0) {
+//     if(extra.length === 0){
+//     if(extra.length === 0){
+//     arrayData.flatMap(item => {
+//     let extraa = {...extra} ;
+//     item.vacancy_appeals_id = vacancy_appeals_id ;
+//     item.user_id = user_id ; 
+//     });
+//     }
+//     }
+//     }
+//     else{
+//     callback(null);
+//     }
+//     }
+
+
 function saveArrayToVacancyApply(vacancy_appeals_id, user_id, arrayData, table_name, datakeys, callback, extra) {
     arrayData = (arrayData || []).filter(d => Object.keys(d).length > 0);
-    if (arrayData.length > 0) {
-    if(extra.length === 0){
-    if(extra.length === 0){
-    arrayData.flatMap(item => {
-    let extraa = {...extra} ;
-    item.vacancy_appeals_id = vacancy_appeals_id ;
-    item.user_id = user_id ; 
-    });
-    }
-    }
-    }
-    else{
-    callback(null);
-    }
-    }
+    if (arrayData.length > 0)
+        db.sequelize.query(`Delete  FROM ${table_name} WHERE user_id=${user_id} and vacancy_appeals_id=${vacancy_appeals_id}`).then((q) => {
+            insertList(table_name, arrayData, datakeys, { ...(extra || {}), user_id, vacancy_appeals_id }, callback);
+        }).catch(err => callback({ error2: err.sqlMessage }));
+    else
+        callback(null);
+}
 
-
-    // db.table_name.destroy({where:{user_id, vacancy_appeals_id}}).then((q) => {
-    // insertList(table_name, arrayData, datakeys, { ...(extra || {}), user_id, vacancy_appeals_id }, callback);
