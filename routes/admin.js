@@ -18,7 +18,7 @@ router.get('/getUser/:fin', authenticate, (req, res) => {
   }
   await db.fin_data.update({children_fin:fin}, {where:{fin}});
   db.children.findOne({where:{fin, deleted:0}, 
-    include:[{model:db.fin_data, required:false}]}).then(children => {
+  include:[{model:db.fin_data, required:false}]}).then(children => {
   if (children && children.user_id == (user || {}).id) 
   db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], 
   where:{id:children.user_id}, include:[{model:db.fin_data, required: false}]}).then(children_user => {
@@ -122,8 +122,9 @@ router.post('/email_update', authenticate, (req, res) => {
   if (isAdmin) { 
   db.users.findOne({where:{fin}}).then((check) => {
   if (check)   
-  db.users.findOne({attributes:[[db.sequelize.fn('COUNT', Sequelize.col('id')), 'count']], where:{email}}).then(u => {
-  if (u.count == 0) 
+  db.users.findOne({where:{email}}).then(u => {
+  const countUser = u.length ;
+  if (countUser == 0) 
   db.users.update({email}, {where:{fin}}).then(() => {
   //admin_update_log 
   insert('admin_update_log', { old: check.email, new: email, fin, description, user_id: req.currentUser.id }, () => {
@@ -149,8 +150,9 @@ router.post('/phone_update', authenticate, (req, res) => {
 
   db.users.findOne({where:{fin}}).then((check) => { 
   if (check) 
-  db.users.findOne({attributes:[[db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']], where:{phone, country_code}}).then(u => {
-  if (u.count == 0) 
+  db.users.findOne({where:{phone, country_code}}).then(u => {
+  const countUser = u.length ;
+  if (countUser == 0) 
   db.users.update({phone, country_code}, {where:{fin}}).then(() => { 
   //admin_update_log
   insert('admin_update_log', { old: (check.country_code + '-' + check.phone), new: (country_code + '-' + phone), fin, 

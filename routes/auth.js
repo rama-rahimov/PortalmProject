@@ -70,7 +70,8 @@ const router = express.Router();
 router.post("/", (req, res) => {
   const isEng = (req.headers.language || "") === "en" ;
   const { email, password } = req.body; 
-  db.users.findOne({attributes:['id', 'password', 'email', 'role', 'phone', 'country_code', 'fin', 'citizenshipId', 'asanLogin'], where:{email, asanLogin:0}, include:[{model:db.fin_data,  required:false}]}).then(user => {
+  db.users.findOne({attributes:['id', 'password', 'email', 'role', 'phone', 'country_code', 'fin', 'citizenshipId', 'asanLogin'], 
+  where:{email, asanLogin:0}, include:[{model:db.fin_data,  required:false}]}).then(user => {
   if (user) {
   if (isValidPassword(password, user.password)){
   delete user.password;
@@ -118,7 +119,7 @@ router.post("/asan_login", (req, res) => {
     path: '/ssoauthz/api/v1/token/check',
     method: 'GET',
     headers: {
-      'Authorization': token
+    'Authorization': token
     }
   }
 
@@ -135,7 +136,8 @@ router.post("/asan_login", (req, res) => {
     last_name: person.surname,
     father_name: person.fatherName  
     };                                                                                                                                                       
-    db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], where:{fin:person.pin}}).then(checkuser => {
+    db.users.findOne({attributes:['id', 'email', 'role', 'phone', 'country_code', 'citizenshipId', 'asanLogin'], 
+    where:{fin:person.pin}}).then(checkuser => {
     user = checkuser;
     }).catch(() => { });
     if (!user) {
@@ -151,7 +153,7 @@ router.post("/asan_login", (req, res) => {
     }  
     db.fin_data.findOne({where:{fin:person.pin}}).then(checkfin_data => {
     if (checkfin_data) {
-    finData = checkfin_data;
+    finData = checkfin_data ;
     }
     }).catch(() => { });
     if (!finData.birth_date) {
