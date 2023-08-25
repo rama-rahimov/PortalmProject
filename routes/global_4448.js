@@ -78,7 +78,9 @@ router.post('/e_documents', global_authenticate, (req, res) => {
 
     if (req.currentGlobalUser.type == 'edugov') {
     const { docNo, brithDate } = req.body;  
-    db.e_documents.findAll({where:{document_no:docNo}, include:[{model:db.fin_data, required:false, where:{birth_date:brithDate}}]}).then(result => {
+    db.e_documents.findAll({where:{document_no:docNo}, 
+    include:[{model:db.fin_data, required:false, 
+    where:{birth_date:brithDate}}]}).then(result => {
     res.json({ /** Burdada sehf var amma umummiyetle ishleyir */
     success: true, diploms: (result || []).map(r => {
     delete r.id;
@@ -90,7 +92,7 @@ router.post('/e_documents', global_authenticate, (req, res) => {
     } else {
     res.status(401).json({ success: false, error: "Non correct token" });
     }
-    });
+});
 
 router.post('/e_document/by_hash', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'edugov') {
@@ -103,12 +105,11 @@ router.post('/e_document/by_hash', global_authenticate, (req, res) => {
     } else {
     res.json({ success: false, error: "Document not found" });
     }
-
     });
     } else {
     res.status(401).json({ success: false, error: "Non correct token" });
     }
-    });
+});
 
 
 /**
@@ -143,12 +144,14 @@ router.post('/mig', /*global_authenticate,*/(req, res) => {
     res.setHeader('Access-Control-Allow-Credentials', true);
 
     //if (req.currentGlobalUser.name == 'rahman') {
-    const { user_id, vacancy_appeals_id, vacancy_id, status, slug, vacant_load, vacant_place, reasonMessage, message, general_value, error_value, unanswered_value, has } = req.body;
+    const { user_id, vacancy_appeals_id, vacancy_id, status, slug, vacant_load, vacant_place, 
+    reasonMessage, message, general_value, error_value, unanswered_value, has } = req.body ;
     //console.log(req.body);
 
     if ([13].includes(Number(status))) {
     if (general_value || error_value || unanswered_value) {
-    db.vacancy_appeals.update({ general_value, error_value, unanswered_value }, { where:{ id: vacancy_appeals_id } }).then(() => {
+    db.vacancy_appeals.update({ general_value, error_value, unanswered_value }, { 
+    where:{ id: vacancy_appeals_id } }).then(() => {
     res.json({ message: 'Məlumat uğurla dəyişdirdi!' });
     });
     }
@@ -179,14 +182,21 @@ router.post('/mig', /*global_authenticate,*/(req, res) => {
     if (applied.error) {
     res.status(304).json({ error: 'Məlumat dəyişdirilə bilmədi!' });
     } else {
-    let nfin = '';  
+    let nfin = '' ;  
 
     if (Number(status) === 4 && has != "director") {
     credentials.vacancy_id = vacancy_id ;
     nfin = await db.appealed_vacancies.findAll({attributes:['id'], where:credentials});
-    db.notifications.destroy({where:{service:"vacancy_appeals", fin:{[Op.in]:nfin.id}, title:status}}).then(() => {
+    let idApOne = [] ;
+    for (let i = 0; i < nfin.length; i++) {
+    idApOne.push(nfin[i].id) ;   
+    }
+
+    db.notifications.destroy({where:{service:"vacancy_appeals", 
+    fin:{[Op.in]:idApOne}, title:status}}).then(() => {
                             
-    db.notifications.create({ service: 'vacancy_appeals', fin: nfin.id, title: data.status, description: message[Number(data.status)] }).then(() => { });
+    db.notifications.create({ service: 'vacancy_appeals', fin: idApOne, 
+    title: data.status, description: message[Number(data.status)] }).then(() => { });
     });
     credentials.vacancy_id = {[Op.ne]:vacancy_id} ;
                         
@@ -202,10 +212,15 @@ router.post('/mig', /*global_authenticate,*/(req, res) => {
     } if (Number(status) === 6) {
     credentials.vacancy_id = vacancy_id ;  
     nfin = await db.appealed_vacancies.findAll({ attributes:['id'], where:credentials });
-                                                                
-    db.notifications.destroy({where:{service:"vacancy_appeals", fin:{[Op.in]: nfin.id}, title:status}}).then(() => {
+    let idApTwo = [] ;
+    for (let i = 0; i < nfin.length; i++) {
+    idApTwo.push(nfin[i].id) ;   
+    }
+    
+    db.notifications.destroy({where:{service:"vacancy_appeals", fin:{[Op.in]: idApTwo}, title:status}}).then(() => {
                              
-    db.notifications.create({ service: 'vacancy_appeals', fin: nfin.id, title: data.status, description: message[Number(data.status)] }).then(() => { });
+    db.notifications.create({ service: 'vacancy_appeals', fin: idApTwo, title: data.status, 
+    description: message[Number(data.status)] }).then(() => { });
     });
     credentials.vacancy_id = {[Op.ne]:vacancy_id} ;  
     nfin = await db.appealed_vacancies.findAll({attributes:['id'], where:credentials});
@@ -241,15 +256,26 @@ router.post('/mig', /*global_authenticate,*/(req, res) => {
 router.post('/student_info', global_authenticate, (req, res) => {
     const { id, fin } = req.body;
     if (req.currentGlobalUser.type == 'student_apply') {
-    // const param = id || fin;
-    // const qPrama = id ? ' sa.id=?' : 'sa.fin=? order by sa.id desc';
-    // {id: id ? id : false, fin: fin ? fin: false}
     const param = id || fin;
-    const qPrama = id ?  {id:id} : {fin:fin} ;  
+    let sa = '' ;
+    if(param === id){
+    sa = db.student_appeals.findOne({attributes:[['id']], 
+    where:{id},
+    include:[{model:db.student_appeals_private_data, required:false, 
+    include:[{model:db.student_appeals_parent_data, required:false, 
+    include:[{model:db.student_appeals_common_data, required:false}]}]}]});
+    } else if (param === fin){
+    sa = db.student_appeals.findOne({attributes:[['id']], 
+    where:{fin},
+    include:[{model:db.student_appeals_private_data, required:false, 
+    include:[{model:db.student_appeals_parent_data, required:false, 
+    include:[{model:db.student_appeals_common_data, required:false}]}]}]});
+    }
 
-    db.student_appeals.findOne({attributes:[['id', 'apply_id']], include:[{model:db.student_appeals_private_data, required:false, include:[{model:db.student_appeals_parent_data, required:false, include:[{model:db.student_appeals_common_data, required:false}]}]}]}).then(apply => {
-    if (apply) {    // burda apply.apply_id nese gorsedir amma ishlemir
-    db.student_appeals_other_docs.findAll({where:{student_appeal_id:apply.apply_id}}).then(other_docs => {
+    sa.then(apply => {
+    const apply_id = apply.id ;
+    if (apply_id) {    
+    db.student_appeals_other_docs.findAll({where:{student_appeal_id:apply_id}}).then(other_docs => {
     res.json({ ...apply, other_docs });
     });
     }
@@ -262,10 +288,13 @@ router.post('/student_info', global_authenticate, (req, res) => {
     });
 
 router.post('/student/apply', global_authenticate, (req, res) => {
-    const { isDoctoral, globalId, status, message, file, paymentTypeId, entranceSpecialtyPaymentAmount } = req.body;
+    const { isDoctoral, globalId, status, message, file, 
+    paymentTypeId, entranceSpecialtyPaymentAmount } = req.body;
     if (req.currentGlobalUser.type == 'student_apply' && Number(status || "") > 0) {
     const extra = {} ; 
-    db.student_appeals.findOne({where:{id:globalId}, include:[{model: db.users, required:false, attributes:['phone', 'country_code', ['citizenshipId', 'cid']]}]}).then((check) => {
+    db.student_appeals.findOne({where:{id:globalId}, 
+    include:[{model: db.users, required:false, 
+    attributes:['phone', 'country_code', ['citizenshipId', 'cid']]}]}).then((check) => {
     if (check) {
     const lang = Number(check.cid) === 1 ? 'az' : 'en';
     if (Number(status) === 10 && Number(check.paymentTypeId) === 1) {
@@ -404,13 +433,17 @@ router.post('/reference', global_authenticate, (req, res) => {
 
 router.post('/olympiad_apply', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'olympiad_admin') {
-    const { global_id, exam_result, docUrl, enterprise_name, room_no, seat_no, status, message, file } = req.body;
-    db.olympiad_apply.update({ exam_result, docUrl, enterprise_name, room_no, seat_no, status }, {where:{ id: global_id }}).then((applyId) => {
+    const { global_id, exam_result, docUrl, enterprise_name, room_no, 
+    seat_no, status, message, file } = req.body;
+    db.olympiad_apply.update({ exam_result, docUrl, 
+    enterprise_name, room_no, seat_no, status }, 
+    {where:{ id: global_id }}).then((applyId) => {
     if (applyId.error) {
     res.status(304).json({ error: 'Məlumat dəyişdirilə bilmədi!' });
     } else { 
     db.notifications.destroy({where:{service:"olympiad_apply", fin:global_id, title:status}}).then(() => {
-    db.notifications.create({ service: 'olympiad_apply', fin: global_id, title: status, description: message, extra_data: (file || docUrl || "") }).then(() => {
+    db.notifications.create({ service: 'olympiad_apply', fin: global_id, title: status, description: message, 
+    extra_data: (file || docUrl || "") }).then(() => {
     res.json({ message: 'Məlumat uğurla dəyişdirdi!' });
     });
     });
@@ -441,15 +474,19 @@ router.post('/olympiad_apply', global_authenticate, (req, res) => {
 // });
 
 router.post('/edu_repair', global_authenticate, (req, res) => {
-    const { edu_repair_id, status, reason, message, teaching_group, date_of_freezing_edu, number_of_order_freezing_edu, number, date, file } = req.body;
+    const { edu_repair_id, status, reason, message, teaching_group, 
+    date_of_freezing_edu, number_of_order_freezing_edu, number, date, file } = req.body;
 
     if (date_of_freezing_edu && number_of_order_freezing_edu) {  
-        db.edu_repair_apply.update({date_of_freezing_edu, number_of_order_freezing_edu}, {where:{id:edu_repair_id}}).then(() => { });
+    db.edu_repair_apply.update({date_of_freezing_edu, number_of_order_freezing_edu}, 
+    {where:{id:edu_repair_id}}).then(() => { });
     } 
 
     db.edu_repair_apply.update({status}, {where:{id:edu_repair_id}}).then(() => { });
-    db.notifications.destroy({where:{service:"edu_repair", fin:edu_repair_id, title:status}}).then(() => {
-    db.notifications.create({service:"edu_repair", fin:edu_repair_id, title:status, description:message}).then(() => { });
+    db.notifications.destroy({where:{service:"edu_repair", 
+    fin:edu_repair_id, title:status}}).then(() => {
+    db.notifications.create({service:"edu_repair", fin:edu_repair_id, 
+    title:status, description:message}).then(() => { });
     });
 
     res.json({ succes: true, message: 'Məlumat uğurla dəyişdirdi!' });
@@ -461,7 +498,8 @@ router.post('/course', /* global_authenticate, */(req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
     res.setHeader('Access-Control-Allow-Credentials', true);
     // if (req.currentGlobalUser.name == 'rahman') {
-    const { user_id, course_appeals_id, course_id, status, slug, reasonMessage } = req.body;
+    const { user_id, course_appeals_id, course_id, 
+    status, slug, reasonMessage } = req.body ;
     // console.log(req.body);
     let data;
     let credentials;
@@ -666,7 +704,7 @@ router.get('/applicant/data/:user_id/:ap_id', global_authenticate, (req, res) =>
     contact_data: []
     });
     }
-    });
+});
 
 
 

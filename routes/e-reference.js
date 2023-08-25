@@ -68,7 +68,8 @@ router.get('/statistika/:p', async (req, res) => {
     let date = p.split('-')[0] || String(new Date().getDate());
     let endDate = p.split('-')[1] || '';
     let endWhere = {status:3} ;
-    let extraString = [ 'edu_level', 'document_purpose', 'entranceYear', 'direction', [db.sequelize.fn("COUNT", Sequelize.col("id")), 'count']] ;
+    let extraString = [ 'edu_level', 'document_purpose', 'entranceYear', 'direction', 
+    [db.sequelize.fn("COUNT", Sequelize.col("id")), 'count']] ;
 
     if (date.split('.').length === 1) {
     date = String(new Date().getYear() + 1900).substring(2, 4) + '.' + String(new Date().getMonth() + 1001).substring(2, 4) + '.' + date;
@@ -104,6 +105,7 @@ router.get('/statistika/:p', async (req, res) => {
 
     //console.log("SELECT direction" + extraString + ", count(id) AS count FROM e_documents_apply WHERE update_date >'20" + date.replace('.', '-') + " 00:00:00' " + endWhere + " AND STATUS=3 GROUP BY direction" + extraString);
     db.e_documents_apply.findAll({attributes:extraString, where:endWhere, group:['direction']}).then(result => {
+    const count_e_documents = result.length ;
     let response = `<html>
 <head>
 <style>
@@ -137,7 +139,7 @@ tr:nth-child(even) {
         ${extraString.includes('document_purpose') ? `<td>${(_.find(document_purposes, (e) => e.id === Number(r.document_purpose)) || { name: '' }).name}</td>` : ''}
         ${extraString.includes('edu_level') ? `<td>${Number(r.direction) !== 5 ? (_.find(eduLevels, (e) => e.id === Number(r.edu_level) && e.direction === Number(r.direction)) || { name: '' }).name : ''}</td>` : ''}
         ${extraString.includes('entranceYear') ? `<td>${![2, 4].includes(Number(r.direction)) ? '' : r.entranceYear}</td>` : ''}
-        <td>${r.count}</td>
+        <td>${count_e_documents}</td>
     </tr>
 `;
         });
@@ -153,7 +155,7 @@ tr:nth-child(even) {
     'Təyinatı': (_.find(document_purposes, (e) => e.id === Number(r.document_purpose)) || { name: '' }).name,
     'Təhsil səviyyəsi': Number(r.direction) !== 5 ? (_.find(eduLevels, (e) => e.id === Number(r.edu_level) && e.direction === Number(r.direction)) || { name: '' }).name : '' ,
     'Qəbul ili': ![2, 4].includes(Number(r.direction)) ? '' : r.entranceYear,
-    'say': r.count
+    'say': count_e_documents
     })));*/
     });
     }});
@@ -164,42 +166,57 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
     let check_sql_array = [];  
     switch (Number(direction)) {                                                                                                                               
     case 1:
-    check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count'], 
-    [db.sequelize.fn("SUM", db.sequelize.literal(`CASE WHEN status < 2 THEN 1 ELSE 0 END`)), 'status_count']], 
-    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, 
-    {status:{[Op.ne]:2}},{[Op.or]:[db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
-    db.sequelize.literal(`INTERVAL ${Number(document_purpose === 1 ? 30 : 3000)} DAY`)< db.sequelize.fn("NOW"))), 
-    {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-    break;
+        check_sql = db.e_documents_apply.findAll({
+        where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, 
+        {direction}, {entranceYear:{[Op.is]:null}}, {status:{[Op.ne]:2}},{[Op.or]:
+        [db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
+        db.sequelize.literal(`INTERVAL ${Number(document_purpose === 1 ? 30 : 3000)} 
+        DAY`) > db.sequelize.fn("NOW"))), {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+        break;
     case 2:  
-    check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
-    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear}, 
-    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), 
-    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
-    break;
+        check_sql =  db.e_documents_apply.findAll({
+        where:{[Op.and]:[{user_id:req.currentUser.id}, 
+        {document_purpose}, {edu_level}, {direction}, {entranceYear}, 
+        db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
+        db.sequelize.literal(`INTERVAL 30 DAY`) > db.sequelize.fn("NOW"))), 
+        {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
+        break;
     case 3:  
-    check_sql =  db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
-    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, 
-    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)< db.sequelize.fn("NOW"))), 
-    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-    break;
+        check_sql =  db.e_documents_apply.findAll({where:{[Op.and]:[{user_id:req.currentUser.id}, 
+        {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, 
+        db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
+        db.sequelize.literal(`INTERVAL 30 DAY`) > db.sequelize.fn("NOW"))), 
+        {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+        break;
     case 4:  
-    check_sql =   db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
-    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear}, 
-    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), 
-    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-    break;
+        check_sql =   db.e_documents_apply.findAll({where:{[Op.and]:[{user_id:req.currentUser.id}, 
+        {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear}, 
+        db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
+        db.sequelize.literal(`INTERVAL 30 DAY`) > db.sequelize.fn("NOW"))), 
+        {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+        break;
     case 5:        
-    check_sql = db.e_documents_apply.findAll({attributes:[[db.sequelize.fn("COUNT", "id"), 'count']], 
-    where:{[Op.and]:[{user_id:req.currentUser.id}, {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear:{[Op.is]:null}}, 
-    db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , db.sequelize.literal(`INTERVAL 30 DAY`)> db.sequelize.fn("NOW"))), 
-    {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
-    break;
+        check_sql = db.e_documents_apply.findAll({where:{[Op.and]:[{user_id:req.currentUser.id}, 
+        {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear:{[Op.is]:null}} , 
+        db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
+        db.sequelize.literal(`INTERVAL 30 DAY`) > db.sequelize.fn("NOW"))), 
+        {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
+        break;
     }
    
   
     check_sql.then(check => {
-    if ((Number((check || {}).count) === 0 || readOnly) && (!id || check)) {
+    const countCheck = check.length ;
+    let sumCheck = 0 ;
+    let takeStatus ;
+    if(check.length  && check[0].direction === 1){
+    for (let i = 0; i < check.length; i++) {
+    takeStatus = check[i].status < 2 ? 1 : 0 ;       
+    sumCheck += takeStatus ;
+    }
+    }
+    
+    if (countCheck === 0 || readOnly && (!id || check)) {
     if (Number(direction) === 1) {
     sendRequest({
     RequestKey: 'Ncs9Pheqw42bkpsfMqux03klqwjJ4bNeUNcs9Pheklqw',
@@ -290,7 +307,7 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
     else
     res.json({});
     } else {
-    res.json({ count: Number((check || {}).count), status_count: Number((check || {}).status_count) });
+    res.json({ count: countCheck, status_count: sumCheck });
     }
     });
     });
@@ -313,9 +330,12 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
  */
 
 router.get('/all', authenticate, (req, res) => {
-    db.e_documents_apply.findAll({where:{user_id:req.currentUser.id}, order:[['id', 'DESC']], 
-    include:[{model:db.e_documents, required: false, attributes:['pdf_diplom_url', 'hash']}]}).then(appeals => {
-    res.json(appeals) }) });
+    db.e_documents_apply.findAll({
+    where:{user_id:req.currentUser.id}, order:[['id', 'DESC']], 
+    include:[{model:db.e_documents, required: false, 
+    attributes:['pdf_diplom_url', 'hash']}]}).then(appeals => {
+    res.json(appeals) }) 
+});
 
 
 /**
@@ -339,9 +359,11 @@ router.get('/all', authenticate, (req, res) => {
 router.get('/by_id/:id', authenticate, (req, res) => {
     const { id } = req.params;
     if (id) { 
-    db.e_documents_apply.findOne({ where:{ id,  user_id:req.currentUser.id} }).then(apply => {
+    db.e_documents_apply.findOne({ 
+    where:{ id,  user_id:req.currentUser.id} }).then(apply => {
     if (apply) { 
-    db.e_document_files.findAll({where:{e_documents_apply_id:id}}).then(certificates => {
+    db.e_document_files.findAll({
+    where:{e_documents_apply_id:id}}).then(certificates => {
     res.json({ ...apply, certificates });
     });
     } else {
@@ -388,18 +410,16 @@ router.get('/by_id/:id', authenticate, (req, res) => {
  */
 
 router.post('/save', authenticate, (req, res) => {
-
     const { step, dataForm, status } = req.body;
     const { certificates } = dataForm;
 
     saveApply(0, step, dataForm, req.currentUser.id, (result) => {
     //console.log('save end ', result)
-
     if (result.id)  
     db.e_document_files.destroy({where:{e_documents_apply_id:result.id}}).then(() => {
     if (certificates) {
     certificates.flatMap(item => {
-    item.e_documents_apply_id =  result.id
+    item.e_documents_apply_id = result.id ;
     });
     db.e_document_files.bulkCreate(certificates).then(() => {
     sendData(status, dataForm, result.id, () => {
@@ -422,20 +442,31 @@ router.post('/save', authenticate, (req, res) => {
 module.exports = router;
 
 function saveApply(status, step, dataForm, user_id, callback) {
-    const { id, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
-    is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency, entranceYear,
+    const { id, country, country_code, phone, first_name, last_name,
+    father_name, birth_date, address, actual_address, citizenship, email,
+    is_address_current, fin, direction, edu_level, document_purpose, 
+    programs_type, reference_provided, government_agency, entranceYear,
     program, edu_institution, level_of_edu, specialty, edu_duration, actual_region } = dataForm;
 
     if (id) {
                 
-    db.e_documents_apply.findOne({attributes:['id', 'user_id'], where:{id}}).then(e_reference_apply => {
+    db.e_documents_apply.findOne({attributes:['id', 'user_id'], 
+    where:{id}}).then(e_reference_apply => {
     if (e_reference_apply) {
     if (Number(user_id) !== Number(e_reference_apply.user_id)) {
     callback({ error: 'Invailid user_id' });
     } else {
-    db.e_documents_apply.update({status, step, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
-    is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency,
-    program, edu_institution, level_of_edu, specialty, edu_duration, actual_region, entranceYear, update_date: new Date().toISOString().slice(0, 19).replace('T', ' ')}, {where:{id}}).then(e_reference_apply_update => {
+    db.e_documents_apply.update({status, step, 
+    country, country_code, phone, first_name, 
+    last_name, father_name, birth_date, address, 
+    actual_address, citizenship, email,
+    is_address_current, fin, direction, edu_level, 
+    document_purpose, programs_type, reference_provided, 
+    government_agency, program, edu_institution, 
+    level_of_edu, specialty, edu_duration, actual_region, 
+    entranceYear, update_date: 
+    new Date().toISOString().slice(0, 19).replace('T', ' ')},
+    {where:{id}}).then(e_reference_apply_update => {
     if (e_reference_apply_update.error) {
                             callback({ error: e_reference_apply_update.error });
     } else {
@@ -449,9 +480,15 @@ function saveApply(status, step, dataForm, user_id, callback) {
     });
     } else {
         
-    db.e_documents_apply.create({user_id, status, step, country, country_code, phone, first_name, last_name, father_name, birth_date, address, actual_address, citizenship, email,
-    is_address_current, fin, direction, edu_level, document_purpose, programs_type, reference_provided, government_agency,
-    program, edu_institution, level_of_edu, specialty, edu_duration, actual_region, entranceYear, update_date: new Date().toISOString().slice(0, 19).replace('T', ' ')}).then(applyId => {
+    db.e_documents_apply.create({user_id, status, step, 
+    country, country_code, phone, first_name, last_name, 
+    father_name, birth_date, address, actual_address, 
+    citizenship, email, is_address_current, fin, direction, 
+    edu_level, document_purpose, programs_type, 
+    reference_provided, government_agency, program, edu_institution, 
+    level_of_edu, specialty, edu_duration, actual_region, 
+    entranceYear, update_date: 
+    new Date().toISOString().slice(0, 19).replace('T', ' ')}).then(applyId => {
     if (applyId.error) {
     callback({ error: applyId.error });
     } else {
@@ -496,7 +533,8 @@ function sendData(status, dataForm, id, callback) {
     FileExtension: ext,
     Description: dataForm.description || ""
     }, 'CreateEdocument', (r) => {
-    updateStatus(id, r.result && r.result.CreateEdocumentResult && r.result.CreateEdocumentResult.Status === 200, callback, 1);
+    updateStatus(id, r.result && r.result.CreateEdocumentResult && 
+    r.result.CreateEdocumentResult.Status === 200, callback, 1);
     });
     });
     } else {
@@ -541,7 +579,8 @@ function sendData(status, dataForm, id, callback) {
 
 const updateStatus = (id, docNo, callback, status = 3) => {
     db.notifications.destroy({where:{service:"reference", fin:id, title:(docNo ? 1 : 0)}}).then(() => {
-    db.notifications.create({service: 'reference', fin: id, title: !!docNo ? 1 : 0, description: !!docNo ? 'Sizin müraciətiniz qeydə alınmışdır.' 
+    db.notifications.create({service: 'reference', fin: id, title: !!docNo ? 1 : 0, 
+    description: !!docNo ? 'Sizin müraciətiniz qeydə alınmışdır.' 
     : 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: "" }).then(() => {
     if (docNo) { 
     db.e_documents_apply.update({ status, docNo: status === 1 ? null : docNo },{where:{ id }}).then(() => {
@@ -824,7 +863,7 @@ function createReferencePdf(id, callback) {
     type: Number(result.direction)
     }, (filename) => {
     if (filename) {  
-    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
     var endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
     var end_date = Number(result.document_purpose) !== 1 ? endDate.toISOString().split('T')[0] : '2090-01-01';
@@ -913,7 +952,7 @@ function createATISReferencePdf(id, callback) {
     type: Number(result.direction)
     }, (filename) => {
     if (filename) {  
-    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
     var endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
     var end_date = endDate.toISOString().split('T')[0];
@@ -965,9 +1004,12 @@ function createATISReferencePdf(id, callback) {
 
 
 function createPTSReferencePdf(id, callback) {  
-    db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    db.e_documents_apply.findOne({where:{id}, 
+    include:[{model:db.government_agencies, required:false, 
+    attributes:[['r_name', 'ga_name']]}]}).then(result => {
     if (result) {
-    const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
+    const reference_provided = Number(result.reference_provided) === 2 ? 
+    result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
     getPTSData({
     fin: result.fin,
     education_level: result.edu_level,
@@ -999,7 +1041,7 @@ function createPTSReferencePdf(id, callback) {
     type: Number(result.direction)
     }, (filename) => {
     if (filename) {  
-    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
     var endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
     var end_date = endDate.toISOString().split('T')[0];
@@ -1052,10 +1094,12 @@ function createPTSReferencePdf(id, callback) {
 
 function createExamReferencePdf(id, callback) {
     db.e_documents_apply.findOne({where:{id}, 
-    include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    include:[{model:db.government_agencies, required:false, 
+    attributes:[['r_name', 'ga_name']]}]}).then(result => {
     if (result) {
     //console.log('start result', result);
-    const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
+    const reference_provided = Number(result.reference_provided) === 2 ? 
+    result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR." ;
     getExamData({
     fin: result.fin
     }, (apiResult) => {
@@ -1080,7 +1124,7 @@ function createExamReferencePdf(id, callback) {
     }, (filename) => {
     //console.log('start filename', filename);
     if (filename) { 
-    db.e_documents.findAll({where:{document_no:docNo}}).then(checkDocument => {
+    db.e_documents.findOne({where:{document_no:docNo}}).then(checkDocument => {
     var endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
     var end_date = endDate.toISOString().split('T')[0];

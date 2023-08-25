@@ -57,7 +57,8 @@ router.get('/send_sms', (req, res) => {
     for (const n of numbers) {
     await new Promise(function (resolve, reject) {
     //
-    smsSend(n.phone, `Tehsil muessisine qebulla bagli portal.edu.az-da müvafiq muessiseye qeydiyyat etmelisiniz. Eks halda qebulunuz tesdiqlenmeyecek. Son tarix: 25.07.2022 12.00`, (r) => {
+    smsSend(n.phone, `Tehsil muessisine qebulla bagli portal.edu.az-da müvafiq muessiseye qeydiyyat 
+    etmelisiniz. Eks halda qebulunuz tesdiqlenmeyecek. Son tarix: 25.07.2022 12.00`, (r) => {
     if (!r.sent) {
     console.log(r);
     }
@@ -223,9 +224,11 @@ router.post('/course', /*global_authenticate,*/(req, res) => {
 router.post('/e_documents', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'edugov') {
     const { docNo, brithDate } = req.body; 
-    db.e_documents.findAll({where:{document_no:docNo}, include:[{model:db.fin_data, required:false, where:{birth_date:brithDate}}]}).then(result => {
+    db.e_documents.findAll({where:{document_no:docNo}, 
+    include:[{model:db.fin_data, required:false, 
+    where:{birth_date:brithDate}}]}).then(result => {
     res.json({
-    success: true, diploms: (result || []).map(r => {  // sadece result qaytaranda normal ishleyir amma bu cur yox
+    success: true, diploms: (result || []).map(r => {  // sadece result qaytaranda normal ishleyir amma bu cur ishlemir
     delete r.id;
     //delete r.hash;
     return { ...r, file_details: JSON.parse(r.file_details) }
@@ -274,10 +277,13 @@ router.post('/tms/changeStatus', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'tms' && Number(status || "") > 0) {
     // const extra = {};
     switch (statusId) {
-        case 1030: status = 1; statusDescription = 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.'; break;
+        case 1030: status = 1; 
+        statusDescription = 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.'; break;
         case 1031: status = 2; break;
-        case 1035: status = 4; statusDescription = 'Müraciətinizin icrası dayandırılmışdır. Cari mövzu ilə əlaqədar yeniliklər olduğu halda yeni müraciət göndərməyiniz xahiş olunur.'; break;
-        case 1036: status = 5; statusDescription = 'Müraciətinizin icrası təxirə salınmışdır. Müraciətiniz yenidən icraata alındıqdan sonra Sizə məlumat veriləcək, eyni mövzu ilə yeni müraciətin göndərilməməsi xahiş olunur.'; break;
+        case 1035: status = 4; 
+        statusDescription = 'Müraciətinizin icrası dayandırılmışdır. Cari mövzu ilə əlaqədar yeniliklər olduğu halda yeni müraciət göndərməyiniz xahiş olunur.'; break;
+        case 1036: status = 5; statusDescription = `Müraciətinizin icrası təxirə salınmışdır. Müraciətiniz yenidən icraata 
+        alındıqdan sonra Sizə məlumat veriləcək, eyni mövzu ilə yeni müraciətin göndərilməməsi xahiş olunur.`; break;
         case 1037: status = 6; break;
         case 4: status = 3; statusDescription = 'Müraciətinizin araşdırılması tamamlanmışdır.'; break;
         default: status = statusId;
@@ -304,8 +310,11 @@ router.post('/tms/save', global_authenticate, (req, res) => {
     const { fin, files } = req.body;
     saveTmsApply(req.body, (result) => {
     if (result.id) { 
-    db.notifications.create({ service: 'support', fin: result.id, title: 1, description: 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.', extra_data: "" }).then(() => {
-    db.support_files.destroy({where:{support_apply_id:result.id}}).then((certificates) => {
+    db.notifications.create({ service: 'support', fin: result.id, title: 1, 
+    description: 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.', 
+    extra_data: "" }).then(() => {
+    db.support_files.destroy({
+    where:{support_apply_id:result.id}}).then((certificates) => {
     if (certificates) {
     files.flatMap(item => {
     item.support_apply_id = result.id ;

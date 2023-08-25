@@ -322,11 +322,13 @@ router.post('/save', authenticate, (req, res) => {
 
     saveApply(0, step, dataForm, req.currentUser.id, (result) => {
     if (result.id) {   
-    db.notifications.destroy({where:{service:"debt", fin:result.id, title:(!!status ? 1 : 0)}}).then(() => {
-    db.notifications.create({service: 'debt', fin: result.id, title: !!status ? 1 : 0, description: "", extra_data: "" }).then(() => {
+    db.notifications.destroy({where:{service:"debt", fin:result.id , 
+    title:(!!status ? 1 : 0)}}).then(() => {
+    db.notifications.create({service: 'debt', fin: result.id, title: !!status ? 1 : 0, 
+    description: "", extra_data: "" }).then(() => {
     if (!!status)
     sendRequest({
-    ...dataForm,
+    ...dataForm ,
     RecoveryTypes: dataForm.RecoveryType,
     global_id: result.id,
     fin: req.currentUser.fin,

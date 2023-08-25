@@ -185,21 +185,21 @@ router.get('/opencourse/applications/', authenticate, async (req, res) => {
     // order by id desc
 
     db.course_appeals.findAll({attributes:[[db.sequelize.fn("CONCAT", 
-    Sequelize.col("first_name"), " ", Sequelize.col("last_name"), " ", Sequelize.col("father_name")),
-     "full_name"], "lang", "training_motivation", "training_date", 
-     "actual_region", "training_about", "training_about_text", ["id", "course_appeals_id"], "fin", 
-     "phone", "borncity"], include:[{model:db.appealed_courses, required:true, attributes:["id", "end_date",
-      "enterprises_name", "corpus_name", "amount", "specialty_name", "oc_direction_name", "course_id",
-    ["name", "course_name"], "status"], where:like}]}).then(data => {
+    Sequelize.col("first_name"), " ", Sequelize.col("last_name"), " ", 
+    Sequelize.col("father_name")), "full_name"], "lang", "training_motivation", 
+    "training_date", "actual_region", "training_about", "training_about_text", 
+    ["id", "course_appeals_id"], "fin",  "phone", "borncity"], include:[
+    {model:db.appealed_courses, required:true, attributes:["id", "end_date",
+    "enterprises_name", "corpus_name", "amount", "specialty_name", "oc_direction_name",
+    "course_id", ["name", "course_name"], "status"], where:like}]}).then(data => {
     res.json(data);
     });
-    });
+});
 
 
 router.get('/opencourse/applications/:id', authenticate, async (req, res, next) => {
     const { offset, limit } = req.query;
     const enterprises_id = req.query.enterprises_id;
-
     const csId = await db.course_appeals.findAll({attributes:['user_id']}) ;
     let obCsId = [] ;
     for (let i = 0; i < csId.length; i++) {
@@ -266,7 +266,6 @@ router.get('/opencourse/applications/:id', authenticate, async (req, res, next) 
  */
 
 router.post('/save', authenticate, (req, res) => {
-
     const { step, dataForm, status } = req.body ;
     const { educations, appealed_courses, emp_history_scans, work_exp_list } = dataForm ;
 
@@ -279,11 +278,14 @@ router.post('/save', authenticate, (req, res) => {
 
     work_exp_list.flatMap(item => {
     item.course_appeals_id = result.id ;
-    item.user_id = req.currentUser.id ; });
+    item.user_id = req.currentUser.id ; 
+    });
 
-    db.work_exp_list_for_course.bulkCreate(work_exp_list).then(() => { resultCount++;
+    db.work_exp_list_for_course.bulkCreate(work_exp_list).then(() => { 
+    resultCount++ ;
     if (resultCount === 6) { resolve(true); } });
-    } else { resultCount++ ; 
+    } else { 
+    resultCount++ ; 
     if (resultCount == 6) { resolve(true); } } });
                             
     db.emp_history_scans_for_course.destroy({where:{course_appeals_id:result.id}}).then(() => {
@@ -291,12 +293,14 @@ router.post('/save', authenticate, (req, res) => {
 
     emp_history_scans.flatMap(item => {
     item.course_appeals_id = result.id ;
-    item.user_id = req.currentUser.id ; });
+    item.user_id = req.currentUser.id ; 
+    });
 
     db.emp_history_scans_for_course.bulkCreate(emp_history_scans).then(() => {
     resultCount++; 
     if (resultCount === 6) { resolve(true); } });
-    } else { resultCount++ ; 
+    } else { 
+    resultCount++ ; 
     if (resultCount == 6) { resolve(true) } } });
                             
     db.educations_for_course.destroy({where:{course_appeals_id:result.id}}).then(() => {
@@ -304,16 +308,17 @@ router.post('/save', authenticate, (req, res) => {
 
     educations.flatMap(item => {
     item.course_appeals_id = result.id ;
-    item.user_id = req.currentUser.id ; });
+    item.user_id = req.currentUser.id ; 
+    });
 
     db.educations_for_course.bulkCreate(educations).then(() => {
-     resultCount++;
-     if (resultCount === 6) {
-     resolve(true); } });
+    resultCount++;
+    if (resultCount === 6) {
+    resolve(true); } });
     } else { resultCount++;
     if (resultCount == 6) {
-     resolve(true);
-     } } });
+    resolve(true);
+    } } });
                         
     db.appealed_courses.destroy({where:{course_appeals_id:result.id, status:0}}).then(() => {
     if ((appealed_courses || []).length > 0) {

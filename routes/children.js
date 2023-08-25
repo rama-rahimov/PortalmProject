@@ -13,12 +13,10 @@ yield* array;
 
 router.get('/updateAllData', authenticate, (req, res) => {
   const { fin } = req.currentUser;
-  db.children
-  .findAll({
+  db.children.findAll({
   where: { user_id: req.currentUser.id, deleted: 0 },
   include: [{ model: db.fin_data, required: false }],
-  })
-  .then((children) => {
+  }).then((children) => {
   midRequest('/getPersonRelations', { pin: fin }, async (response) => {
   const { status, data } = response;
   const childs = children || [];
@@ -29,12 +27,10 @@ router.get('/updateAllData', authenticate, (req, res) => {
   )
   )) {
   const { dateOfBirthStr, pin } = child.relative;
-  db.children
-  .findOne({
+  db.children.findOne({
   attributes: ['user_id'],
   where: { fin: pin, deleted: 0 },
-  })
-  .then((dbchild) => {
+  }).then((dbchild) => {
   if (!dbchild)
   childs.push({
   fin: pin,
@@ -154,27 +150,23 @@ router.post('/save', authenticate, (req, res) => {
     birth_certificate_no,
     school_code,
     utis_code,
-  } = req.body;
+  } = req.body ;
 
   if (Number(type) === 3 && !fin) {
   fin = 'UC' + utis_code;
   }
   if ((fin || '').toLowerCase() != (req.currentUser.fin || '').toLowerCase()) {
-  db.children
-  .findOne({ attributes: ['id'], where: { fin, deleted: 0 } })
-  .then((check_children) => {
+  db.children.findOne({ attributes: ['id'], 
+  where: { fin, deleted: 0 } }).then((check_children) => {
   if ((check_children || {}).id && check_children.id != id) {
   res.json({ success: false, err: 'Bu uşaq artıq sistemdə var!' });
   } else {
-  db.children
-  .findOne({
+  db.children.findOne({
   attributes: ['id'],
   where: { user_id: req.currentUser.id, id: id || 0, deleted: 0 },
-  })
-  .then((children) => {
+  }).then((children) => {
   if ((children || {}).id) {
-  db.children
-  .update(
+  db.children.update(
   {
   type,
   fin,
@@ -190,18 +182,14 @@ router.post('/save', authenticate, (req, res) => {
   utis_code,
   },
   { where: { id } }
-  )
-  .then((data) => {
+  ).then((data) => {
   if (data.error) {
   res.json({ success: false, error: data.error });
   } else {
   if (Number(citizenshipId) > 2)
-  db.fin_data
-  .findOne({ attributes: ['fin'], where: { fin } })
-  .then((check_fin) => {
+  db.fin_data.findOne({ attributes: ['fin'], where: { fin } }).then((check_fin) => {
   if (!check_fin) {
-  db.fin_data
-  .create({
+  db.fin_data.create({
   fin,
   first_name,
   last_name,
@@ -215,8 +203,7 @@ router.post('/save', authenticate, (req, res) => {
   born_country,
   citizenship,
   address,
-  })
-  .then((fin_data) => {
+  }).then((fin_data) => {
   if (fin_data.error) {
   res.json({
   success: false,
@@ -226,14 +213,12 @@ router.post('/save', authenticate, (req, res) => {
   res.json({
   id: children.id,
   success: true,
-  message:
-  'Uşağın məlumatları uğurla əlavə edildi!',
+  message:'Uşağın məlumatları uğurla əlavə edildi!',
   });
   }
   });
   } else {
-  db.fin_data
-  .update(
+  db.fin_data.update(
   {
   first_name,
   last_name,
@@ -249,8 +234,7 @@ router.post('/save', authenticate, (req, res) => {
   address,
   },
   { where: { fin } }
-  )
-  .then((fin_data) => {
+  ).then((fin_data) => {
   if (fin_data.error) {
   res.json({
   success: false,
@@ -260,8 +244,7 @@ router.post('/save', authenticate, (req, res) => {
   res.json({
   id: children.id,
   success: true,
-  message:
-  'Uşaqın məlumatları uğurla dəyişdirildi!',
+  message:'Uşaqın məlumatları uğurla dəyişdirildi!',
   });
   }
   });
@@ -276,8 +259,7 @@ router.post('/save', authenticate, (req, res) => {
   }
   });
   } else {
-  db.children
-  .create({
+  db.children.create({
   user_id: req.currentUser.id,
   type,
   fin,
@@ -291,18 +273,14 @@ router.post('/save', authenticate, (req, res) => {
   parent_type,
   utis_code,
   school_code,
-  })
-  .then((data) => {
+  }).then((data) => {
   if (data.error) {
   res.json({ success: false, error: data.error });
   } else {
   if (Number(citizenshipId) > 2)
-  db.fin_data
-  .findOne({ attributes: ['fin'], where: { fin } })
-  .then((check_fin) => {
+  db.fin_data.findOne({ attributes: ['fin'], where: { fin } }).then((check_fin) => {
   if (!check_fin) {
-  db.fin_data
-  .create({
+  db.fin_data.create({
   fin,
   first_name,
   last_name,
@@ -316,8 +294,7 @@ router.post('/save', authenticate, (req, res) => {
   born_country,
   citizenship,
   address,
-  })
-  .then((fin_data) => {
+  }).then((fin_data) => {
   if (fin_data.error) {
   //console.log("fin_data_insert_error", user.error);
   res.json({
@@ -333,8 +310,7 @@ router.post('/save', authenticate, (req, res) => {
   }
   });
   } else {
-  db.fin_data
-  .update(
+  db.fin_data.update(
   {
   first_name,
   last_name,
@@ -350,8 +326,7 @@ router.post('/save', authenticate, (req, res) => {
   address,
   },
   { where: { fin } }
-  )
-  .then((fin_data) => {
+  ).then((fin_data) => {
   if (fin_data.error) {
   //console.log("fin_data_insert_error", fin_data.error);
   res.json({
@@ -404,12 +379,10 @@ router.post('/save', authenticate, (req, res) => {
  */
 router.get('/by_id/:id', authenticate, (req, res) => {
   const { id } = req.params;
-  db.children
-  .findOne({
+  db.children.findOne({
   where: { user_id: req.currentUser.id, id, deleted: 0 },
   include: [{ model: db.fin_data, required: false }],
-  })
-  .then((children) => {
+  }).then((children) => {
   if (children) res.json(children);
   else res.json({});
   });
@@ -433,12 +406,10 @@ router.get('/by_id/:id', authenticate, (req, res) => {
  */
 
 router.get('/all', authenticate, (req, res) => {
-  db.children
-  .findAll({
+  db.children.findAll({
   where: { user_id: req.currentUser.id, deleted: 0 },
   include: [{ model: db.fin_data, required: false }],
-  })
-  .then((children) => {
+  }).then((children) => {
   res.json(children);
   });
   });

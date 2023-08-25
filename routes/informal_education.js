@@ -1,5 +1,4 @@
 const express = require("express") ;
-const {querySync} = require("../middlewares/db.js") ;
 const {authenticate} = require("../middlewares/authenticate.js") ;
 const db = require('../models');
 require('dotenv').config() ;
@@ -23,8 +22,9 @@ router.post('/payment', (req, res) => {
     const fin = apply_id;
     const service = "informal_edu";
     if (module_id) { 
-    db.informal_edu_user_modules.update({payment_status:1, status:6}, {where:{inf_education_apply_id:apply_id, module_id}}).then((resData) => {
-    if (resData.affectedRows) {  // resData qaytarir amma resData.affectedRows qaytarmir
+    db.informal_edu_user_modules.update({payment_status:1, status:6}, 
+    {where:{inf_education_apply_id:apply_id, module_id}}).then((resData) => {
+    if (resData) {  // resData qaytarir amma resData.affectedRows qaytarmir
     const title = 6;
     const description = "Modul üzrə ödəniş edildi";
     db.notifications.create({service, fin, title, description}).then((resNotification) => {
@@ -44,8 +44,9 @@ router.post('/payment', (req, res) => {
     res.json(error)
     })
     } else {    
-    db.informal_edu_appeals.update({payment_status:1, apply_status:3}, {where:{id:apply_id}}).then((resData) => {
-    if (resData.affectedRows) {
+    db.informal_edu_appeals.update({payment_status:1, apply_status:3}, 
+    {where:{id:apply_id}}).then((resData) => {
+    if (resData) {
     const title = 3;
     const description = "Nəzəri imtahana ödəniş edildi";
     db.notifications.create({service, fin, title, description}).then((resNotification) => {
@@ -79,12 +80,15 @@ router.post('/payment', (req, res) => {
 
 const apply_session_appointment = (apply_id, user_id, fin, ATIS_ID, specialty_ATIS_ID, callback) => {
     db.informal_edu_session_specializations.findAll({attributes:['id', 'session_id', 'specialty_id', 
-    'specialty_status'], where:{specialty_status:1}, order:[['id', 'DESC']], include:[{model:db.informal_edu_specializations, required:true, 
+    'specialty_status'], where:{specialty_status:1}, order:[['id', 'DESC']], 
+    include:[{model:db.informal_edu_specializations, required:true, 
     attributes:[['id', 'spc_id'],
-    'ATIS_ID', 'specialty_ATIS_ID', 'specialty_group_name', 'specialty'], where:{ATIS_ID, specialty_ATIS_ID}}]}).then(resData => {
+    'ATIS_ID', 'specialty_ATIS_ID', 'specialty_group_name', 'specialty'], 
+    where:{ATIS_ID, specialty_ATIS_ID}}]}).then(resData => {
     if (resData.length === 1) { 
-    db.informal_edu_appeals.update({session_id:apply_id}, {where:{id:user_id, fin}}).then(resUpdateData => {
-    if (resUpdateData.affectedRows) {
+    db.informal_edu_appeals.update({session_id:apply_id}, {
+    where:{id:user_id, fin}}).then(resUpdateData => {
+    if (resUpdateData) {
     callback({
     status: true,
     message: "e"
@@ -123,7 +127,8 @@ router.post('/save', authenticate, (req, res) => {
     const {step, dataForm, status} = req.body;
     const {fin} = dataForm;
     const user_id = req.currentUser.id ; 
-    db.informal_edu_appeals.findOne({where:{user_id, fin}}).then(resApply => {
+    db.informal_edu_appeals.findOne({
+    where:{user_id, fin}}).then(resApply => {
     if (resApply) {
 
     /**
@@ -133,17 +138,17 @@ router.post('/save', authenticate, (req, res) => {
     if ([0, 12].includes(resApply.apply_status)) {
 
     const {
-                    citizenship,
-                    fin, first_name, last_name,
-                    father_name, social_status,
-                    birth_date, genderId,
-                    address, is_address_current, spc,
-                    actual_address, borncity, country,
-                    social_scan, phone, email,
-                    confirm_email, id_copy,
-                    work_exp, social_card_number,
-                    doc_scan2, status
-    } = dataForm;
+    citizenship,
+    fin, first_name, last_name,
+    father_name, social_status,
+    birth_date, genderId,
+    address, is_address_current, spc,
+    actual_address, borncity, country,
+    social_scan, phone, email,
+    confirm_email, id_copy,
+    work_exp, social_card_number,
+    doc_scan2, status
+    } = dataForm ;
 
     const id = resApply.id;
     const apply_date = req.body.status === 1 ? now() : null;
@@ -190,18 +195,20 @@ router.post('/save', authenticate, (req, res) => {
     notificationSend("informal_edu", id, status, (resNotification) => {
 
     })  
-    db.informal_edu_previous_info.destroy({where:{inf_education_apply_id: id}}).then((resPrDelete) => {
+    db.informal_edu_previous_info.destroy({
+    where:{inf_education_apply_id: id}}).then((resPrDelete) => {
     previous_education_info(id, dataForm, (resData) => {
 
     })
     }); 
-    db.informal_edu_work_experience.destroy({where:{inf_education_apply_id: id}}).then((resWorkDelete) => {
+    db.informal_edu_work_experience.destroy({
+    where:{inf_education_apply_id: id}}).then((resWorkDelete) => {
     work_experience(id, dataForm, (resData) =>
     {});
     }) 
-    db.informal_edu_knowledge_and_skills.destroy({where:{inf_education_apply_id: id}}).then((resKnDelete) => {
+    db.informal_edu_knowledge_and_skills.destroy({
+    where:{inf_education_apply_id: id}}).then((resKnDelete) => {
     knowledge_and_skill(id, dataForm, (resData) => {
-
     });
     });
     if (req.body.status === 1) {
@@ -338,14 +345,14 @@ router.post('/apply/module/save', authenticate, (req, res) => {
 const informal_edu_apply = (step, status, user_id, dataForm, callback) => {
 
     const {
-        citizenship, fin, first_name,
-        last_name, father_name,
-        social_status, birth_date, genderId,
-        address, is_address_current,
-        spc, actual_address, borncity,
-        country,
-        social_scan, phone, email, confirm_email, id_copy,
-        work_exp, social_card_number, doc_scan2,
+    citizenship, fin, first_name,
+    last_name, father_name,
+    social_status, birth_date, genderId,
+    address, is_address_current,
+    spc, actual_address, borncity,
+    country, confirm_email, id_copy,
+    social_scan, phone, email, 
+    work_exp, social_card_number, doc_scan2,
     } = dataForm;
 
     const apply_date = status === 1 ? now() : null;
@@ -358,10 +365,13 @@ const informal_edu_apply = (step, status, user_id, dataForm, callback) => {
     const sn = spcl[3];
 
     db.informal_edu_appeals.create({
-    session_id, user_id, citizenship, fin, first_name, last_name,
-    father_name, social_status, birth_date, genderId, address, is_address_current, ATIS_ID, specialty_ATIS_ID, sn,
-    actual_address, borncity, country, social_scan, phone, email, confirm_email, id_copy, work_exp,
-    social_card_number, doc_scan2, apply_date, step, apply_status
+    session_id, user_id, citizenship, fin, first_name, 
+    last_name, father_name, social_status, birth_date, 
+    genderId, address, is_address_current, ATIS_ID, 
+    specialty_ATIS_ID, sn, actual_address, borncity, 
+    country, social_scan, phone, email, confirm_email, 
+    id_copy, work_exp, social_card_number, doc_scan2, 
+    apply_date, step, apply_status
     }).then((applyId) => {
     if (applyId.error) {
     callback(applyId.error)
@@ -447,17 +457,20 @@ const knowledge_and_skill = (inf_education_apply_id, dataAll, callback) => {
 
 
 router.get('/specializations', authenticate, async (req, res) => { 
-    const iesd = await db.informal_edu_session_date.findAll({attributes:['id'] , where:{apply_status:1}});
+    const iesd = await db.informal_edu_session_date.findAll({attributes:['id'] , 
+    where:{apply_status:1}});
     let iEsd = [] ;
     for (let i = 0; i < iesd.length; i++) {
     iEsd.push(iesd[i].id); 
     }
-   return  db.informal_edu_session_specializations.findAll({attributes:['id', 'session_id', 'specialty_id', 'specialty_status'],
-    where:{specialty_status:1, type:'specialty', session_id:iEsd}, order:[['id', 'DESC']],
-    include:[{model:db.informal_edu_specializations , required:true, 
-    attributes:[['id', 'spc_id'], 'ATIS_ID', 'sn', 'specialty_ATIS_ID', 'specialty_group_name', 'specialty',
-    ['specialty', 'name'], [Sequelize.fn("CONCAT", Sequelize.col("ATIS_ID"), "_", Sequelize.col("specialty_ATIS_ID"), "_", Sequelize.col("sn")), "spc"]], 
-    group:['ATIS_ID']}]}).then(result => {
+   return  db.informal_edu_session_specializations.findAll({
+    attributes:['id', 'session_id', 'specialty_id', 'specialty_status'],
+    where:{specialty_status:1, type:'specialty', session_id:iEsd}, 
+    order:[['id', 'DESC']], include:[{model:db.informal_edu_specializations , 
+    required:true, attributes:[['id', 'spc_id'], 'ATIS_ID', 'sn', 
+    'specialty_ATIS_ID', 'specialty_group_name', 'specialty', ['specialty', 'name'], 
+    [Sequelize.fn("CONCAT", Sequelize.col("ATIS_ID"), "_", Sequelize.col("specialty_ATIS_ID"),
+    "_", Sequelize.col("sn")), "spc"]], group:['ATIS_ID']}]}).then(result => {
     res.json(result);
     }).catch(err => {
     res.json(err);
@@ -475,13 +488,13 @@ router.post('/modules', authenticate, (req, res) => {
 
     const {session_id, sn} = req.body.credentials;
     db.informal_edu_session_specializations.findAll({where:{session_id, module_status:1}, 
-    include:[{model:db.informal_edu_specialty_modules, required:true, attributes:[['id', 'module_id'], 'sn', ['name', 'module_name']], 
+    include:[{model:db.informal_edu_specialty_modules, required:true, 
+    attributes:[['id', 'module_id'], 'sn', ['name', 'module_name']], 
     where:{sn}}]}).then(resModule => {
     res.json({
     modules: resModule !== null ? resModule.length > 1 ? resModule : [resModule] : null
     });
     });
-
 });
 
 /**
@@ -497,17 +510,33 @@ router.get('/apply/show', authenticate, async (req, res) => {
     const user_id = req.currentUser.id ;
     const fin = req.currentUser.fin ; 
 
-    db.informal_edu_appeals.findOne({where:{user_id, fin}, include:{model:db.informal_edu_specializations, required:false, attributes:['specialty']}}).then(resApply => {
+    db.informal_edu_appeals.findOne({where:{user_id, fin}, 
+    include:{model:db.informal_edu_specializations, required:false, 
+    attributes:['specialty']}}).then(resApply => {
     const apply_id = resApply.id;
-    db.informal_edu_previous_info.findAll({where:{inf_education_apply_id:apply_id}}).then(resPreviousInfo => {
-    db.informal_edu_knowledge_and_skills.findAll({attributes:[['file_name', 'sample_pic']], where:{file_type:"image", inf_education_apply_id:apply_id}}).then(resSamplePic => {
-    db.informal_edu_knowledge_and_skills.findAll({attributes:[['file_name', 'skills_exp']], where:{file_type:"document", inf_education_apply_id:apply_id}}).then(resSkillsExp => {
-    db.informal_edu_work_experience.findAll({where:{inf_education_apply_id:apply_id}}).then(resWorkExperience => {
-    db.informal_edu_user_modules.findAll({attributes:['user_id', 'inf_education_apply_id', 'module_id', [db.sequelize.fn("IF", {"user_id" : 0 }, 1, 1), 'status'], // if status ishlemir chunki status uniquedir amma bashqalari ishleyir
-    ['payment_status', 'module_payment_status'], [db.sequelize.fn("IF", {"payment_status" : 0 }, 'Ödəniş edilməyib', 'Ödəniş edilib'), 'module_payment_message']],
-    where:{user_id, inf_education_apply_id:apply_id}, include:[{model:db.informal_edu_module_documents, required:false, attributes:['certificate', 'protocol',
-    'extract'], include:[{model:db.informal_edu_specialty_modules, required:false, attributes:['name'/*, 'module_name'*/], include:[{model:db.informal_edu_status_messages,
-    required:true, attributes:[['message', 'module_status_message']]}]}]}]}).then(resModules => {
+    db.informal_edu_previous_info.findAll({
+    where:{inf_education_apply_id:apply_id}}).then(resPreviousInfo => {
+    db.informal_edu_knowledge_and_skills.findAll({
+    attributes:[['file_name', 'sample_pic']], where:{file_type:"image", 
+    inf_education_apply_id:apply_id}}).then(resSamplePic => {
+    db.informal_edu_knowledge_and_skills.findAll({
+    attributes:[['file_name', 'skills_exp']], where:{file_type:"document", 
+    inf_education_apply_id:apply_id}}).then(resSkillsExp => {
+    db.informal_edu_work_experience.findAll({
+    where:{inf_education_apply_id:apply_id}}).then(resWorkExperience => {
+    db.informal_edu_user_modules.findAll({
+    attributes:['user_id', 'inf_education_apply_id', 'module_id', 
+    [db.sequelize.fn("IF", {"user_id" : 0 }, 1, 1), 'status'], // if status ishlemir chunki status uniquedir amma bashqalari ishleyir
+    ['payment_status', 'module_payment_status'], 
+    [db.sequelize.fn("IF", {"payment_status" : 0 }, 
+    'Ödəniş edilməyib', 'Ödəniş edilib'), 'module_payment_message']],
+    where:{user_id, inf_education_apply_id:apply_id}, 
+    include:[{model:db.informal_edu_module_documents, required:false, 
+    attributes:['certificate', 'protocol', 'extract'], include:[{model:db.informal_edu_specialty_modules, 
+    required:false, attributes:['name'/*, 'module_name'*/], 
+    include:[{model:db.informal_edu_status_messages,
+    required:true, attributes:[['message', 'module_status_message']]}]
+    }]}]}).then(resModules => {
     res.json({
     id: resApply.id,
     session_id: resApply.session_id,
@@ -578,13 +607,19 @@ router.get('/apply/history', authenticate, async (req, res) => {
     const user_id = req.currentUser.id ;
     const apply = await db.informal_edu_appeals.findOne({attributes:['id','session_id', 'user_id', 'apply_status', 'ATIS_ID' , 'specialty_ATIS_ID' ,
     [db.sequelize.fn("if", "apply_status" > 5, 'Nəzəri imtahandan keçdi', 'Nəzəri imtahandan keçmədi'), 'theo_exam_message']], where:{user_id}});
-    const session_name = await db.informal_edu_session_date.findOne({attributes:['name'], where:{id:apply.session_id}});
-    const specialty = await db.informal_edu_specializations.findAll({attributes:['specialty'], where:{ATIS_ID:apply.ATIS_ID, specialty_ATIS_ID: apply.specialty_ATIS_ID}});
-    const theo_minimum_point = await db.informal_edu_session_date.findOne({attributes:['theo_minimum_point'], where:{id:apply.session_id}});
-    const theo_questions_number = await db.informal_edu_session_date.findOne({attributes:['theo_questions_number'], where:{id:apply.session_id}});
-    const theo_value = await db.informal_edu_session_exam_results.findAll({attributes:['theo_value'], where:{inf_education_apply_id:apply.id , session_id:apply.session_id}});
+    const session_name = await db.informal_edu_session_date.findOne({attributes:['name'], 
+    where:{id:apply.session_id}});
+    const specialty = await db.informal_edu_specializations.findAll({attributes:['specialty'], 
+    where:{ATIS_ID:apply.ATIS_ID, specialty_ATIS_ID: apply.specialty_ATIS_ID}});
+    const theo_minimum_point = await db.informal_edu_session_date.findOne({
+    attributes:['theo_minimum_point'], where:{id:apply.session_id}});
+    const theo_questions_number = await db.informal_edu_session_date.findOne({
+    attributes:['theo_questions_number'], where:{id:apply.session_id}});
+    const theo_value = await db.informal_edu_session_exam_results.findAll({
+    attributes:['theo_value'], where:{inf_education_apply_id:apply.id , session_id:apply.session_id}});
     const theo_exam_date = await db.informal_edu_session_date.findOne({attributes:['theo_exam_date'], where:{id:apply.session_id}});
-    const exam_not_passed = await db.informal_edu_session_exam_results.findAll({attributes:['exam_not_passed'], where:{inf_education_apply_id:apply.id, session_id:apply.session_id}});
+    const exam_not_passed = await db.informal_edu_session_exam_results.findAll({attributes:['exam_not_passed'], 
+    where:{inf_education_apply_id:apply.id, session_id:apply.session_id}});
     app.push(session_name);
     app.push(specialty);
     app.push(theo_minimum_point);

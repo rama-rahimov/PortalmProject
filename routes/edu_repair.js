@@ -32,11 +32,14 @@ const router = express.Router();
 
 
 router.post('/', global_authenticate, (req, res) => {
-    const { edu_repair_id, status, reason, message, teaching_group, date_of_freezing_edu, number_of_order_freezing_edu, number, date, file } = req.body ;
+    const { edu_repair_id, status, reason, message, 
+    teaching_group, date_of_freezing_edu, number_of_order_freezing_edu, 
+    number, date, file } = req.body ;
 
     if (date_of_freezing_edu && number_of_order_freezing_edu) {  
-    db.edu_repair_apply.update({date_of_freezing_edu, number_of_order_freezing_edu}, {where:{id: edu_repair_id}}).then(() => { });
-    }
+    db.edu_repair_apply.update({date_of_freezing_edu, number_of_order_freezing_edu}, 
+    {where:{id: edu_repair_id}}).then(() => { })} ;
+    
     db.edu_repair_apply.update({status}, {where:{id: edu_repair_id}}).then(() => { });
     db.notifications.destroy({where:{service:"edu_repair", fin:edu_repair_id, title:status}}).then(() => {
     db.notifications.create({service:'edu_repair', fin:edu_repair_id, title:status, description:message}).then(() => { });
