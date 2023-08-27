@@ -4,6 +4,7 @@ const moment = require('moment');
 const { authenticate } = require('../middlewares/authenticate.js');
 const { midRequest } = require('./soap.js') ;
 const db = require('../models');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
@@ -52,7 +53,7 @@ router.get('/updateAllData', authenticate, (req, res) => {
   res.json(true);
   });
   });
-  });
+});
 
 router.get('/check_fin/:fin', authenticate, (req, res) => {
   const { fin } = req.params;
@@ -154,8 +155,12 @@ router.post('/save', authenticate, (req, res) => {
 
   if (Number(type) === 3 && !fin) {
   fin = 'UC' + utis_code;
-  }
+  }else fin = check_code;
+
   if ((fin || '').toLowerCase() != (req.currentUser.fin || '').toLowerCase()) {
+  db.children.findAll({where:{user_id:req.currentUser.id, id:{[Op.ne]:id || 0},
+  deleted:0}}).then(cc => {
+  if (Number(cc.count) < 5 || !!id) {
   db.children.findOne({ attributes: ['id'], 
   where: { fin, deleted: 0 } }).then((check_children) => {
   if ((check_children || {}).id && check_children.id != id) {
@@ -187,7 +192,8 @@ router.post('/save', authenticate, (req, res) => {
   res.json({ success: false, error: data.error });
   } else {
   if (Number(citizenshipId) > 2)
-  db.fin_data.findOne({ attributes: ['fin'], where: { fin } }).then((check_fin) => {
+  db.fin_data.findOne({ attributes: ['fin'], 
+  where: { fin } }).then((check_fin) => {
   if (!check_fin) {
   db.fin_data.create({
   fin,
@@ -355,11 +361,15 @@ router.post('/save', authenticate, (req, res) => {
   }
   });
   }
+  });  
+  } else {
+  res.json({ success: false, err: 'Uşaq əlavə etmək sayını aşdınız.' });
+  }
   });
   } else {
   res.json({ success: false, err: 'Xəta baş verdi.' });
   }
-  });
+});
 
 /**
  * @api {get} /children/by_id/:id Child
@@ -378,7 +388,7 @@ router.post('/save', authenticate, (req, res) => {
  * @apiError (500 Internal Server Error) InternalServerError The server encountered an internal error
  */
 router.get('/by_id/:id', authenticate, (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params ;
   db.children.findOne({
   where: { user_id: req.currentUser.id, id, deleted: 0 },
   include: [{ model: db.fin_data, required: false }],
@@ -386,7 +396,7 @@ router.get('/by_id/:id', authenticate, (req, res) => {
   if (children) res.json(children);
   else res.json({});
   });
-  });
+});
 
 /**
  * @api {get} /children/all All children
@@ -412,7 +422,7 @@ router.get('/all', authenticate, (req, res) => {
   }).then((children) => {
   res.json(children);
   });
-  });
+});
 
 /**
  * @api {get} /children/delete/:id Child delete
@@ -437,16 +447,14 @@ router.get('/delete/:id', authenticate, (req, res) => {
   if (data.error) {
   res.json({ success: false, error: data.error });
   } else {
-  db.children
-  .findAll({
+  db.children.findAll({
   where: { user_id: req.currentUser.id, deleted: 0 },
   include: [{ model: db.fin_data, required: false }],
-  })
-  .then((children) => {
+  }).then((children) => {
   res.json(children);
   });
   }
   });
-  });
+});
 
 module.exports = router;

@@ -109,8 +109,8 @@ router.get('/by_id/:id', authenticate, (req, res) => {
     where:{user_id:req.currentUser.id, id}, 
     include:[{model:db.additional_educations_private_data}]}).then(apply => {
     if (apply) {
-    db.additional_educations_other_docs.findAll({where:{additional_education_id:id}})
-    .then(other_docs  =>  {
+    db.additional_educations_other_docs.findAll({
+    where:{additional_education_id:id}}).then(other_docs  =>  {
     res.json({apply, other_docs}) ;
     })
     }
@@ -329,8 +329,10 @@ router.post('/payment/get_url', authenticate, (req, res) => {
  */
 
 router.get('/all', authenticate, (req, res) => {
-    db.additional_educations.findAll({attributes:['id', 'paymentChekScan', 'educationLevelId', 'reject_description', 'reject_files',
-    'EducationStageId', 'institutionAtisId', 'EntranceYear', 'educationFormId', 'status', 'institutionAtisId', 'paymentTypeId'], 
+    db.additional_educations.findAll({attributes:['id', 'paymentChekScan', 
+    'educationLevelId', 'reject_description', 'reject_files',
+    'EducationStageId', 'institutionAtisId', 'EntranceYear', 
+    'educationFormId', 'status', 'institutionAtisId', 'paymentTypeId'], 
     where:{user_id: req.currentUser.id}, order:[['id', 'DESC']]}).then(apply => {
     res.json(apply);
     });
@@ -371,11 +373,12 @@ router.get('/check_apply', authenticate, (req, res) => {
     if (((data || {}).limits || []).length > 0) {
     const arr = data.limits.filter(l => Number(l.citizenshipId) === Number(citizenshipId) && Number(l.educationTypeId) === 2)
     if (arr.length > 0) {
-    db.additional_educations.findOne({attributes:[[Sequelize.fn('COUNT', Sequelize.col('id')), 'count']], 
+    db.additional_educations.findAll({ 
     where:{[Op.and]:[Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('create_date')), (new Date()).getFullYear()), 
     {fin:req.currentUser.fin}, {status:{[Op.notIn]:finish_statuses}}]}}).then(appeals => {
+    const appealsCount = appeals.length ;
     const count = citizenshipId === 1 ? 1 : 5;
-    if (Number((appeals || {}).count) < count) {
+    if ((appealsCount || {}) < count) {
     res.json(true);
     } else {
     res.json(false);
@@ -434,9 +437,11 @@ router.post('/save', authenticate, (req, res) => {
     db.additional_educations_other_docs.bulkCreate(other_docs).then(() => {
     if (Number(status) === 1) {
     sendDataToATIS(dataForm, req.currentUser, result.id, (r) => {
-    db.additional_educations.update({ status: (r === 0 ? 15 : 1), isSend: r ? 1 : 0 }, {where:{ id: result.id }}).then(() => {
+    db.additional_educations.update({ status: (r === 0 ? 15 : 1), isSend: r ? 1 : 0 }, 
+    {where:{ id: result.id }}).then(() => {
     if (r === 0)
-    db.notifications.create({ service: 'additional_education', fin: result.id, title: 15 }).then(() => {
+    db.notifications.create({ service: 'additional_education', 
+    fin: result.id, title: 15 }).then(() => {
     res.json({ ...result, r });
     });
     else
@@ -450,7 +455,8 @@ router.post('/save', authenticate, (req, res) => {
     } else {
     if (Number(status) === 1) {
     sendDataToATIS(dataForm, req.currentUser, result.id, (r) => {
-    db.additional_educations.update({ status: (r === 0 ? 15 : 1), isSend: r ? 1 : 0 }, { where:{ id: result.id } }).then(() => {
+    db.additional_educations.update({ status: (r === 0 ? 15 : 1), 
+        isSend: r ? 1 : 0 }, { where:{ id: result.id } }).then(() => {
     if (r === 0)
     db.notifications.create({ service: 'additional_education', fin: result.id, title: 15 }).then(() => {
     res.json({ ...result, r });
@@ -696,9 +702,13 @@ function saveApply(status, step, dataForm, user, lang, callback) {
     callback({ error: applyId.error });
     } else {
     db.additional_educations_private_data.create({
-    fin, additional_education_id: applyId, user_id, first_name, last_name, father_name, birth_date, actual_region, have_residence_permit,
-    is_address_current, actual_address, n_country, email, genderId, passport_series, passport_number, country_code,
-    citizenship, address, maritalStatus, adress_in_foreign, last_live_country, phone, middle_name, birth_certificate
+    fin, additional_education_id: applyId, user_id, 
+    first_name, last_name, father_name, birth_date, 
+    actual_region, have_residence_permit, is_address_current, 
+    actual_address, n_country, email, genderId, 
+    passport_series, passport_number, country_code, citizenship, 
+    address, maritalStatus, adress_in_foreign, last_live_country, 
+    phone, middle_name, birth_certificate
     }).then(r1 => {
     if (r1.error) { 
     db.additional_educations.destroy({where:{id:applyId}}).then(() => {

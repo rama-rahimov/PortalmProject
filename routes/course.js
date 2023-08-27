@@ -4,7 +4,7 @@ const moment = require("moment") ;
 const axios = require('axios') ;
 const { Op } = require("sequelize");
 const db = require('../models');
-const { Sequelize } = require("sequelize") ;
+const { Sequelize } = require("sequelize");
 
 const router = express.Router();
 
@@ -32,7 +32,9 @@ router.get('/all', authenticate, (req, res) => {
     include:[{model:db.appealed_courses, required:false ,
     where:{end_date:{[Op.gt]:db.sequelize.fn('NOW')}}, 
     order:[['create_date', 'DESC']]}]}).then(appeals => {
-    res.json(appeals); }); });
+    res.json(appeals); 
+    }); 
+});
 
 /**
  *
@@ -59,7 +61,8 @@ router.get('/teaching_courses', authenticate, (req, res) => {
     headers: { authorization: "Bearer " + process.env.VACANCIES_TOKEN } }).then(({ data }) => { res.json(data);
     }).catch((error) => {
     console.log(error)
-    res.json({ success: false }) }) });
+    res.json({ success: false }) }) 
+});
 
 /**
  * İmtina almış şəxs təkrar müraciət edərkən
@@ -69,16 +72,23 @@ router.get('/re-apply', authenticate, (req, res) => {
     const { id } = req.body ;
     db.course_appeals.findOne({where:{id,status:3}}).then(apply => {
     if (apply) { 
-    db.educations_for_course.findAll({where:{course_appeals_id:apply.id}}).then(educations => {
-    db.appealed_courses.findAll({where:{course_appeals_id:apply.id}}).then(selectedCourses => {
-    db.work_exp_list_for_course.findAll({where:{course_appeals_id:apply.id}}).then(work_exp_list_for_course => {
-    db.emp_history_scans_for_course.findAll({where:{course_appeals_id:apply.id}}).then(emp_history_scans_for_course => {
+    db.educations_for_course.findAll({
+    where:{course_appeals_id:apply.id}}).then(educations => {
+    db.appealed_courses.findAll({
+    where:{course_appeals_id:apply.id}}).then(selectedCourses => {
+    db.work_exp_list_for_course.findAll({
+    where:{course_appeals_id:apply.id}}).then(work_exp_list_for_course => {
+    db.emp_history_scans_for_course.findAll({
+    where:{course_appeals_id:apply.id}}).then(emp_history_scans_for_course => {
     res.json({
     ...apply, educations, selectedCourses,
     work_exp_list: work_exp_list_for_course.length > 0 ? work_exp_list_for_course : [{}],
     emp_history_scans: emp_history_scans_for_course.length > 0 ? emp_history_scans_for_course : null
     }) }) }) }) })
-    } else { res.json({ success: false })} }) });
+    } else { 
+    res.json({ success: false })} 
+    }) 
+});
 
 /**
  *  Əvvəl ki təhsil məlumatlari
@@ -97,7 +107,7 @@ router.get('/all/educations/:fin', authenticate, (req, res) => {
     console.log(error);
     res.json({});
     });
-    });
+});
 
 
 /**
@@ -122,10 +132,14 @@ router.get('/all/educations/:fin', authenticate, (req, res) => {
 router.get('/by_id/:id', authenticate, (req, res) => {
     db.course_appeals.findOne({where:{id:req.params.id}}).then(apply => {
     if (apply) {  
-    db.educations_for_course.findAll({where:{course_appeals_id:apply.id}}).then(educations => {
-    db.appealed_courses.findAll({where:{course_appeals_id:apply.id}}).then(selectedCourses => {
-    db.work_exp_list_for_course.findAll({where:{course_appeals_id:apply.id}}).then(work_exp_list_for_course => {
-    db.emp_history_scans_for_course.findAll({where:{course_appeals_id:apply.id}}).then(emp_history_scans_for_course => {
+    db.educations_for_course.findAll({
+    where:{course_appeals_id:apply.id}}).then(educations => {
+    db.appealed_courses.findAll({
+    where:{course_appeals_id:apply.id}}).then(selectedCourses => {
+    db.work_exp_list_for_course.findAll({
+    where:{course_appeals_id:apply.id}}).then(work_exp_list_for_course => {
+    db.emp_history_scans_for_course.findAll({
+    where:{course_appeals_id:apply.id}}).then(emp_history_scans_for_course => {
     res.json({
     ...apply, educations, selectedCourses,
     work_exp_list: work_exp_list_for_course.length > 0 ? work_exp_list_for_course : [{}],
@@ -134,22 +148,27 @@ router.get('/by_id/:id', authenticate, (req, res) => {
     } else {
     res.json({
     success: false
-    }); } }); });
+    }); } }); 
+});
 
 
 router.get('/lastData', authenticate, (req, res) => {
-    db.course_appeals.findAll({where:{user_id:req.currentUser.id, status:{[Op.ne]: 0}}, 
-    order:[["id", "DESC"]]}).then(apply => { res.json(apply); });  });
+    db.course_appeals.findAll({
+    where:{user_id:req.currentUser.id, status:{[Op.ne]: 0}}, 
+    order:[["id", "DESC"]]}).then(apply => { res.json(apply); }); 
+});
 
 router.get('/last', authenticate, (req, res) => {
-    db.appealed_courses.findAll({where:{user_id:req.currentUser.id, end_date:{[Op.gt]: new Date()}}, 
-    order:[['create_date', 'DESC']]}).then(apply => { res.json(apply); });  });
+    db.appealed_courses.findAll({
+    where:{user_id:req.currentUser.id, end_date:{[Op.gt]: new Date()}}, 
+    order:[['create_date', 'DESC']]}).then(apply => { res.json(apply); });
+});
 
 
 router.get('/opencourse/applications/', authenticate, async (req, res) => {
     const { offset, limit } = req.query ;
-
-    const csId = await db.course_appeals.findAll({attributes:['user_id']}) ;
+    const csId = await db.course_appeals.findAll({
+    attributes:['user_id']}) ;
     let obCsId = [] ;
     for (let i = 0; i < csId.length; i++) {
     obCsId.push(csId[i].user_id);
@@ -371,35 +390,35 @@ module.exports = router;
 function saveApply(status, step, dataForm, user_id, callback) {
 
     const {
-        id,
-        country,
-        fin,
-        citizenship,
-        first_name,
-        last_name,
-        father_name,
-        training_motivation,
-        actual_region,
-        lang,
-        lang_other_text,
-        training_date,
-        training_about,
-        training_about_text,
-        birth_date,
-        borncity,
-        address,
-        phone,
-        email,
-        actual_address,
-        is_address_current,
-        genderId,
-        position_type,
-        dq_point,
-        miq_point,
-        country_code,
-        militaryService,
-        social_scan,
-        social_status
+    id,
+    country,
+    fin,
+    citizenship,
+    first_name,
+    last_name,
+    father_name,
+    training_motivation,
+    actual_region,
+    lang,
+    lang_other_text,
+    training_date,
+    training_about,
+    training_about_text,
+    birth_date,
+    borncity,
+    address,
+    phone,
+    email,
+    actual_address,
+    is_address_current,
+    genderId,
+    position_type,
+    dq_point,
+    miq_point,
+    country_code,
+    militaryService,
+    social_scan,
+    social_status
     } = dataForm;
 
     db.course_appeals.findOne({ attributes:['id', 'user_id'], 
@@ -448,7 +467,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
     } else {
     callback({
     id: course_appeals.id }) } }) } } else {
-    db.course_appeals.create({ user_id,
+    db.course_appeals.create({ user_id, 
     status,
     step,
     country,
@@ -480,4 +499,8 @@ function saveApply(status, step, dataForm, user_id, callback) {
     social_status,
     training_motivation}).then(applyId => {
     if (applyId.error) { callback({  error: applyId.error  });
-    } else { callback({ id: applyId }) } })  } }) } 
+    } 
+    else { callback(
+    { id: applyId }) 
+    } })  } }) 
+} 

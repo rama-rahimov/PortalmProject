@@ -128,7 +128,6 @@ const atisLogin = (callback) => {
     data: postData,
     url: 'http://192.168.140.80/api/tq/login'
     };
-
     axios(options).then(login_result => {
     if (((login_result || {}).data || {}).access_token) {
     callback(((login_result || {}).data || {}).access_token);

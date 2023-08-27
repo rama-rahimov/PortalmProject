@@ -83,7 +83,7 @@ router.post("/", (req, res) => {
   res.status(400).json({ errors: { global: !isEng ? "İstifadəçi tapılmadı" : "User not found" } });
   }
   });
-  });
+});
 
 
 /**

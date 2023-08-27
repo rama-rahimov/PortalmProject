@@ -53,12 +53,15 @@ const router = express.Router();
 
 router.post("/", (req, res) => {
   const isEng = (req.headers.language || "") === "en" ;
-  let { email, password, phone, country_code, fin, citizenshipId, first_name, last_name, father_name, birth_date, gender, series, number, giving_authority, giving_date, exp_date, district, born_country, citizenship, address, image, social_status} = req.body;
+  let { email, password, phone, country_code, fin, citizenshipId, first_name, last_name, 
+  father_name, birth_date, gender, series, number, giving_authority, giving_date, exp_date, 
+  district, born_country, citizenship, address, image, social_status} = req.body;
   /*if (citizenshipId == 2) {
     fin = docType + fin;
   }*/  
   if (email) { 
-  db.users.findOne({attributes:['id'], where: {[Op.or]: [{ email }, { fin },({phone, country_code})]}}).then(has_user => {
+  db.users.findOne({attributes:['id'], where: {[Op.or]: [{ email }, 
+  { fin },({phone, country_code})]}}).then(has_user => {
   if (has_user) {
   res.json({ success: false, err: !isEng ? 'İstifadəçi sistemdə var.' : 'The user is in the system.' });
   } else {

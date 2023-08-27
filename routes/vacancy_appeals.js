@@ -66,7 +66,7 @@ router.get('/miq_ballar/:fin', authenticate, (req, res) => {
  */
 
 router.get('/director', authenticate, (req, res) => {  
-    db.vacancy_appeals.findAll({where:{user_id:req.currentUser.id, is_director:1, year:req.query.year}}).then(apply => {
+    db.vacancy_appeals.findOne({where:{user_id:req.currentUser.id, is_director:1, year:req.query.year}}).then(apply => {
     if (apply)
     res.json(apply);
     else
@@ -184,14 +184,14 @@ router.get('/extra_data/:table_name/:id', authenticate, async (req, res) => {
  */
 
 router.get('/has_draft/dmiq', authenticate, (req, res) => {  
-    db.vacancy_appeals.findAll({attributes:['creation_date', 'status'], 
+    db.vacancy_appeals.findOne({attributes:['creation_date', 'status'], 
     where:{user_id:req.currentUser.id, is_director:1, year:req.query.year}}).then(result => {
     res.json(result);
     });
 });
 
 router.get('/has_draft/miq', authenticate, (req, res) => { 
-    db.vacancy_appeals.findAll({attributes:['creation_date', 'status'], 
+    db.vacancy_appeals.findOne({attributes:['creation_date', 'status'], 
     where:{user_id:req.currentUser.id, is_director:0, year:req.query.year}}).then(result => {
     res.json(result);
     });
@@ -293,15 +293,27 @@ router.post('/save', authenticate, (req, res) => {
     if (result.id) {
     await (new Promise(((resolve) => {
     let resultCount = Number(status) || 2;
-    saveArrayToVacancyApply(result.id, req.currentUser.id, educations, 'educations', ["user_id", "vacancy_appeals_id", "education_type", "abroad_education_type", "enterprises", "edu_name",
+    saveArrayToVacancyApply(result.id, req.currentUser.id, educations, 'educations', 
+    ["user_id", "vacancy_appeals_id", "education_type", "abroad_education_type", "enterprises", "edu_name",
     "doc_scan", "country", "specialty", "teaching_language", "material_base", "doc_series_number", "admission_date",
-    "graduate_date", "education_level", "diplom_series_number", "education_duration", "region", "edu_base", "given_date"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
-    saveArrayToVacancyApply(result.id, req.currentUser.id, academic_degrees, 'academic_degrees', ["user_id", "vacancy_appeals_id", "academic_degree_date", "academic_degree"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
-    saveArrayToVacancyApply(result.id, req.currentUser.id, emp_history_scans, 'emp_history_scans', ["user_id", "vacancy_appeals_id", "doc_scan"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
-    saveArrayToVacancyApply(result.id, req.currentUser.id, rewards, 'rewards', ["user_id", "vacancy_appeals_id", "rewarding_doc", "rewarding_date", "rewarding"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
-    saveArrayToVacancyApply(result.id, req.currentUser.id, work_exp_list, 'work_exp_list', ["user_id", "isApi", "salary", "area_of_activity", "start_date", "end_date", "vacancy_appeals_id", "company", "employer", "contract_type", "position", "work_type", "description"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
-    saveArrayToVacancyApply(result.id, req.currentUser.id, teaching_aids, 'teaching_aids', ["user_id", "vacancy_appeals_id", "aid_name", "aid_publication_date"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
-    saveArrayToVacancyApply(result.id, req.currentUser.id, appealed_vacancies, 'appealed_vacancies', ["user_id", "vacancy_appeals_id", "status", "vacancy_id", "districts", "enterprises", "corpuses", "modules", "vacant_load", "vacant_place", "teaching_language", "staff_oc_direction", "priority", "position", "position_id"], (s, r) => {
+    "graduate_date", "education_level", "diplom_series_number", "education_duration", "region", "edu_base", "given_date"], 
+    () => { resultCount++; if (resultCount == 9) { resolve(true); } });
+    saveArrayToVacancyApply(result.id, req.currentUser.id, academic_degrees, 'academic_degrees', 
+    ["user_id", "vacancy_appeals_id", "academic_degree_date", "academic_degree"], 
+    () => { resultCount++; if (resultCount == 9) { resolve(true); } });
+    saveArrayToVacancyApply(result.id, req.currentUser.id, emp_history_scans, 'emp_history_scans', 
+    ["user_id", "vacancy_appeals_id", "doc_scan"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
+    saveArrayToVacancyApply(result.id, req.currentUser.id, rewards, 'rewards', 
+    ["user_id", "vacancy_appeals_id", "rewarding_doc", "rewarding_date", "rewarding"], 
+    () => { resultCount++; if (resultCount == 9) { resolve(true); } });
+    saveArrayToVacancyApply(result.id, req.currentUser.id, work_exp_list, 'work_exp_list', 
+    ["user_id", "isApi", "salary", "area_of_activity", "start_date", "end_date", "vacancy_appeals_id", "company", "employer", 
+    "contract_type", "position", "work_type", "description"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
+    saveArrayToVacancyApply(result.id, req.currentUser.id, teaching_aids, 'teaching_aids', ["user_id", "vacancy_appeals_id", "aid_name", 
+    "aid_publication_date"], () => { resultCount++; if (resultCount == 9) { resolve(true); } });
+    saveArrayToVacancyApply(result.id, req.currentUser.id, appealed_vacancies, 'appealed_vacancies', ["user_id", "vacancy_appeals_id", 
+    "status", "vacancy_id", "districts", "enterprises", "corpuses", "modules", "vacant_load", "vacant_place", "teaching_language", 
+    "staff_oc_direction", "priority", "position", "position_id"], (s, r) => {
     if (r && Number(status) && r.affectedRows) {
     for (let index = 0; index < r.affectedRows; index++) {
     db.notifications.create({ service: 'vacancy_appeals', fin: (r.insertId + index), title: 1, 
@@ -408,7 +420,8 @@ function saveVacancyApply(status, step, dataForm, user_id, callback) {
     has_academic_degree, work_exp, pedagogical_exp, is_director, choose_position, year
     } = dataForm ;
 
-    db.vacancy_appeals.findOne({attributes:['id'], where:{user_id, year, is_director:(is_director || 0)}}).then(vacancy_appeals => {
+    db.vacancy_appeals.findOne({attributes:['id'], 
+    where:{user_id, year, is_director:(is_director || 0)}}).then(vacancy_appeals => {
     if ((vacancy_appeals || {}).id) {
     db.vacancy_appeals.update({
     first_name, last_name, father_name, birth_date,
@@ -465,10 +478,11 @@ function saveVacancyApply(status, step, dataForm, user_id, callback) {
 function saveArrayToVacancyApply(vacancy_appeals_id, user_id, arrayData, table_name, datakeys, callback, extra) {
     arrayData = (arrayData || []).filter(d => Object.keys(d).length > 0);
     if (arrayData.length > 0)
-        db.sequelize.query(`Delete  FROM ${table_name} WHERE user_id=${user_id} and vacancy_appeals_id=${vacancy_appeals_id}`).then((q) => {
-            insertList(table_name, arrayData, datakeys, { ...(extra || {}), user_id, vacancy_appeals_id }, callback);
-        }).catch(err => callback({ error2: err.sqlMessage }));
+    db.sequelize.query(`Delete  FROM ${table_name} WHERE user_id=${user_id} 
+    and vacancy_appeals_id=${vacancy_appeals_id}`).then((q) => {
+    insertList(table_name, arrayData, datakeys, { ...(extra || {}), user_id, vacancy_appeals_id }, callback);
+    }).catch(err => callback({ error2: err.sqlMessage }));
     else
-        callback(null);
+    callback(null);
 }
 

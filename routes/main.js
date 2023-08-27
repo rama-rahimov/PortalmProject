@@ -45,22 +45,18 @@ router.get(`/course/pese/data`, (req, res) => {
 });
 
 router.get('/course/show', authenticate, (req, res) => {
-  axios
-  .get(
-  process.env.VACANCIES_HOST +
-  '/api/cadet/teaching_courses_all_statusopen/?&teaching_year=32',
+  axios.get(
+  process.env.VACANCIES_HOST + '/api/cadet/teaching_courses_all_statusopen/?&teaching_year=32',
   {
   headers: {
   authorization: 'Bearer ' + process.env.VACANCIES_TOKEN,
   },
   }
-  )
-  .then(({ data }) => {
+  ).then(({ data }) => {
   res.json({
   openCourse: data,
   });
-  })
-  .catch((error) => {
+  }).catch((error) => {
   res.json({
   success: false,
   });
@@ -96,9 +92,9 @@ router.post('/send_phone_for_verification', async (req, res) => {
   const message = !isEng
   ? `Təsdiqləmə şifrəsi: ${code} Paylaşmayın!`
   : `Confirmation password: ${code} Do not share!`;
-
   
-  db.users.findOne({ attributes: ['phone'], where: { phone, country_code } }).then((user) => {
+  db.users.findOne({ attributes: ['phone'], 
+  where: { phone, country_code } }).then(user => {
   if (user) {
   res.json({
   err: !isEng
@@ -114,7 +110,8 @@ router.post('/send_phone_for_verification', async (req, res) => {
   [
   db.sequelize.fn(
   'if',
-  { 'number_wait_date': { [Op.lt]: db.sequelize.fn('NOW') } },
+  { 'number_wait_date': { 
+  [Op.lt]: db.sequelize.fn('NOW') } },
   1,
   0
   ),
@@ -124,7 +121,7 @@ router.post('/send_phone_for_verification', async (req, res) => {
   where: { phone, country_code },
   }).then((pd) => {
   if (pd) {
-  if (Number(pd.expire) === 1) {
+  if (Object.values(pd)[0].expire === 1) {
   smsSend(
   phone,
   message,
@@ -354,7 +351,6 @@ router.post('/user_phone_verification_code', (req, res) => {
   const { email, phone_verification_code } = req.body;
   const isEng = (req.headers.language || '') === 'en';
   db.users.findOne({ where: { email } }).then(u => {
-    
   if (u.phone)
   db.phone_verification.findOne({
   attributes: ['id', 'count', 'code'],
@@ -447,7 +443,7 @@ router.post('/send_user_for_verification', (req, res) => {
   where: {
   phone,
   country_code: 1,
-  number_wait_date: { [Op.gt]: db.sequelize.fn('NOW') },
+  number_wait_date: { [Op.gt]: Sequelize.fn('NOW') },
   },
   }).then((eChek) => {
   if (Number((eChek || {}).count || 0) < 5) {
@@ -461,7 +457,7 @@ router.post('/send_user_for_verification', (req, res) => {
   [
   db.sequelize.fn(
   'if',
-  { 'number_wait_date': { [Op.gt]: db.sequelize.fn('NOW') } },
+  { number_wait_date: { [Op.gt]: Sequelize.fn('NOW') }},
   1,
   0
   ),
@@ -470,9 +466,8 @@ router.post('/send_user_for_verification', (req, res) => {
   ],
   where: { phone: u.phone, country_code: u.country_code },
   }).then((pd) => {
-  const expire = pd.number_wait_date > new Date() ? 1 : 0 ;
-  if (pd) {
-  if (Number(expire) === 1) {
+  if (pd) { 
+  if (Object.values(pd)[0].expire === 1) {
   smsSend(
   u.phone,
   message,
@@ -642,7 +637,7 @@ router.post('/get_user_email_and_phone', (req, res) => {
   where: { fin },
   include: [{ model: db.fin_data, required: false, where: { birth_date } }],
   }).then((u) => {
-  if (u && u.phone)
+  if (u && u.phone){
   res.json({
   err: '',
   message: '',
@@ -650,7 +645,7 @@ router.post('/get_user_email_and_phone', (req, res) => {
   country_code: u.country_code,
   email: u.email,
   });
-  else
+  }else
   res.json({
   err: !isEng ? 'İstifadəçi tapılmadı' : 'User not found',
   message: '',
@@ -877,9 +872,9 @@ router.get('/specialty', authenticate, (req, res) => {
  */
 router.get('/education_base', authenticate, (req, res) => {
   db.education_base.findAll({ order: [['name', 'ASC']] }).then(
-  (result) => res.json(result)
-  );
+  (result) => res.json(result));
 });
+
 /**
  * @api {get} /main/material_base material_base
  * @apiName material_base
@@ -900,9 +895,9 @@ router.get('/education_base', authenticate, (req, res) => {
  */
 router.get('/material_base', authenticate, (req, res) => {
   db.material_base.findAll({ order: [['name', 'ASC']] }).then(
-  (result) => res.json(result)
-  );
+  (result) => res.json(result));
 });
+
 /**
  * @api {get} /main/teaching_language teaching_language
  * @apiName teaching_language
@@ -1269,9 +1264,8 @@ router.get('/vacancies', authenticate, (req, res) => {
  */
 router.get('/notifications_by/:service/:fin', authenticate, (req, res) => {
   const { service, fin } = req.params;
-
   if (service)
-  db.notifications.findAll({
+  db.notifications.findOne({
   where: { service, fin: fin || req.currentUser.fin },
   order: [['id', 'DESC']],
   }).then((result) => res.json(result));
@@ -1301,7 +1295,6 @@ router.get('/notifications_by/:service/:fin', authenticate, (req, res) => {
 
 router.get('/atis_enterprises', authenticate, (req, res) => {
   const langKey = (req.headers.language || '') === 'en' ? 'nameEn' : 'name';
-
   db.atis_enterprises.findAll({
   group: ['ATIS_ID'],
   order: [['name', 'ASC']],
@@ -1311,21 +1304,21 @@ router.get('/atis_enterprises', authenticate, (req, res) => {
   required: false,
   attributes: [
   [
-  db.sequelize.fn('GROUP_CONCAT', Sequelize.col('specialty_ATIS_ID')),
-  'specialty_ATIS_ID',
+  db.sequelize.fn('GROUP_CONCAT', Sequelize.col('enterprise_ATIS_ID')),
+  'enterprise_ATIS_ID',
   ],
   ],
   },
   ],
-  }).then((result) =>
+  }).then((result) =>{
   res.json(
-  (result || []).map((e) => ({  // sadece result yazanda ishleyir amma bile ishlemir
-  ...e,
+  (result || []).map(e => ({  // sadece result yazanda ishleyir amma bile ishlemir
+  e,
   name: e[langKey],
-  specialty_ATIS_ID:
-  (e.specialty_ATIS_ID && e.specialty_ATIS_ID.split(',')) || [],
+  specialty_ATIS_ID: (e.ent_sp_join.enterprise_ATIS_ID && 
+  e.ent_sp_join.enterprise_ATIS_ID.split(',')) || [],
   }))
-  )
+  )}
   );
 });
 
@@ -1352,16 +1345,14 @@ router.post('/foreigner_enterprises', authenticate, (req, res) => {
   },
   url: `${process.env.ATIS_HOST}/api/tq/institutions`,
   };
-  axios(options)
-  .then((result) => {
+  axios(options).then((result) => {
   res.json(
   ((result.data || {}).institution || []).map((e) => ({
   ATIS_ID: e.atidId,
   name: e[langKey] || e.name,
   }))
   );
-  })
-  .catch((e) => {
+  }).catch((e) => {
   if (e.response) {
   console.log(e.response.data);
   } else {
@@ -1626,7 +1617,7 @@ router.get('/:table', authenticate, (req, res) => {
   }
 });
 
-module.exports =  router;
+module.exports = router;
 
 const atisData = (key, callback) => {
   const params = {

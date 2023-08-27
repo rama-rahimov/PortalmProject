@@ -69,7 +69,7 @@ router.get('/bildiris/:token', /*authenticate,*/(req, res) => {
 router.get('/olympiad_types/active/:fin', authenticate, (req, res) => {
     //status in (0,1) 
     const { fin } = req.params;  
-    db.olympiad_apply.findAll({attributes:['olympiad_process_id'], 
+    db.olympiad_apply.findOne({attributes:['olympiad_process_id'], 
     where:{fin}}).then(olympiad_active_types => {
     res.json(olympiad_active_types);
     });
@@ -240,7 +240,8 @@ router.post('/save', authenticate, (req, res) => {  // buna mutleq qayidib arash
     db.olympiad_certificates.bulkCreate(certificates).then(() => {
     db.notifications.destroy({where:{service:'olympiad_apply', fin:result.id2, title:(!!status ? 1 : 0)}}).then(() => {
     db.notifications.create({
-    service: 'olympiad_apply', fin: result.id2, title: !!status ? 1 : 0, description: Number(dataForm.olympiad_type) === 1 && !!status ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: ""
+    service: 'olympiad_apply', fin: result.id2, title: !!status ? 1 : 0, description: Number(dataForm.olympiad_type) === 1 && !!status 
+    ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: ""
     }).then(() => {
     });
     });
@@ -248,7 +249,9 @@ router.post('/save', authenticate, (req, res) => {  // buna mutleq qayidib arash
 
     } else {         
     db.notifications.destroy({where:{service:'olympiad_apply', fin:result.id2, title:(!!status ? 1 : 0)}}).then(() => {
-    db.notifications.create({ service: 'olympiad_apply', fin: result.id2, title: !!status ? 1 : 0, description: Number(dataForm.olympiad_type) === 1 && !!status ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: "" }).then(() => {
+    db.notifications.create({ service: 'olympiad_apply', fin: result.id2, title: !!status ? 1 : 0, 
+    description: Number(dataForm.olympiad_type) === 1 && !!status 
+    ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: "" }).then(() => {
 
     });
     });
@@ -264,7 +267,9 @@ router.post('/save', authenticate, (req, res) => {  // buna mutleq qayidib arash
     db.olympiad_certificates.bulkCreate(certificates).then(() => {
     db.notifications.destroy({where:{service:'olympiad_apply', fin:result.id, title:(!!status ? 1 : 0)}}).then(() => {
     db.notifications.create({
-    service: 'olympiad_apply', fin: result.id, title: !!status ? 1 : 0, description: Number(dataForm.olympiad_type) === 1 && !!status ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: ""
+    service: 'olympiad_apply', fin: result.id, 
+    title: !!status ? 1 : 0, description: Number(dataForm.olympiad_type) === 1 && !!status 
+    ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: ""
     }).then(() => {
     res.json(result);
     });
@@ -272,7 +277,9 @@ router.post('/save', authenticate, (req, res) => {  // buna mutleq qayidib arash
     });
     } else { 
     db.notifications.destroy({where:{service:"olympiad_apply", fin:result.id, title:(!!status ? 1 : 0)}}).then(() => {
-    db.notifications.create({ service: 'olympiad_apply', fin: result.id, title: !!status ? 1 : 0, description: Number(dataForm.olympiad_type) === 1 && !!status ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: "" }).then(() => {
+    db.notifications.create({ service: 'olympiad_apply', fin: result.id, 
+    title: !!status ? 1 : 0, description: Number(dataForm.olympiad_type) === 1 && !!status 
+    ? 'Müraciətiniz tamamlanmışdır. Buraxılış barədə məlumat göndəriləcəkdir.' : "", extra_data: "" }).then(() => {
     res.json(result);
     });
     });

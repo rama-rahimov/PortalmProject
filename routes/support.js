@@ -63,8 +63,10 @@ router.get('/status/:id/:tmsId', authenticate, (req, res) => {
     }
     if (status && forIntegration) {  
     db.notifications.destroy({where:{service:'support', fin:id, title:status}}).then(() => {
-    db.notifications.create({ service: 'support', fin: id, title: status, description: statusDescription, extra_data: result }).then(() => {
-    db.support_apply.update((result ? { status, result } : { status }), {where:{ tms_id: tmsId }}).then(() => {
+    db.notifications.create({ service: 'support', fin: id, title: status, 
+    description: statusDescription, extra_data: result }).then(() => {
+    db.support_apply.update((result ? { status, result } : { status }), 
+    {where:{ tms_id: tmsId }}).then(() => {
     res.json({ id: tmsId, status, isUpdate: true });
     });
     });
@@ -221,7 +223,10 @@ router.post('/save', authenticate, (req, res) => {
     saveApply(0, step, dataForm, req.currentUser.fin, (result) => {
     if (result.id) {               
     db.notifications.destroy({where:{service:'support', fin:result.id, title:(!!status ? 1 : 0)}}).then(() => {
-    db.notifications.create({ service: 'support', fin: result.id, title: !!status ? 1 : 0, description: !!status ? 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.' : 'Müraciətinizin araşdırılması üçün ərizə formasında tələb olunan bütün məlumatların doldurulub, göndərilməsi tələb olunur.', extra_data: "" }).then(() => {
+    db.notifications.create({ service: 'support', fin: result.id, title: !!status ? 1 : 0, 
+    description: !!status ? 'Sizin müraciətiniz baxılma mərhələsindədir, araşdırıldıqdan sonra sizə geri dönüş ediləcəkdir.' 
+    : 'Müraciətinizin araşdırılması üçün ərizə formasında tələb olunan bütün məlumatların doldurulub, göndərilməsi tələb olunur.', 
+    extra_data: "" }).then(() => {
     db.support_files.destroy({where:{support_apply_id:result.id}}).then(() => {
     if (certificates) {
     certificates.flatMap(item => {
@@ -556,7 +561,7 @@ const sendDataProsys = (data, callback) => {
     (async () => {
         const fileTokens = (data.certificates || []).map(c => (c.doc_scan || "").replace('/file/', '')).filter(c => !!c);
         if (fileTokens.length > 0)  
-        db.files.findAll({where:{token:{[Op.in]:[fileTokens]}}}).then((files) => {
+        db.files.findAll({where:{token:{[Op.in]:fileTokens}}}).then((files) => {
         files.forEach(file => {
         (async () => {
         await fs.readFile(file.path, { encoding: 'base64' }, (err, data) => {

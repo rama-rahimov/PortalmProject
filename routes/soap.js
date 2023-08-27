@@ -37,9 +37,8 @@ router.get('/iamas_update/:pin', authenticate, (req, res) => {
   const isAdmin = Number(req.currentUser.role) === 10;
   
   if (pin && (isAdmin || req.currentUser.fin === pin)) {
-  db.fin_data
-  .findOne({ attributes: ['fin', 'birth_date'], where: { fin: pin } })
-  .then((check_fin) => {
+  db.fin_data.findOne({ attributes: ['fin', 'birth_date'], 
+  where: { fin: pin } }).then((check_fin) => {
   if (check_fin) {
   const birth_date = check_fin.birth_date || '' ;
   updateFinData(pin, birth_date, (data) => {
@@ -69,9 +68,8 @@ router.post('/miqration', ipLimit('miqration'), (req, res) => {
   d.active && (d.document || {}).documentType === iamasDocType
   );
   if (data) {
-  db.fin_data
-  .findOne({ attributes: ['fin'], where: { fin: pin } })
-  .then((check_fin) => {
+  db.fin_data.findOne({ attributes: ['fin'], 
+  where: { fin: pin } }).then(check_fin => {
   const image = data.image;
   const address = data.address || {};
   const newData = {
@@ -105,9 +103,8 @@ router.post('/miqration', ipLimit('miqration'), (req, res) => {
   number: data.document.documentNumber,
   };
   if (!check_fin) {
-  db.fin_data
-  .create({ ...newData, fin: pin })
-  .then((fin_data) => {
+  db.fin_data.create({ ...newData, 
+  fin: pin }).then((fin_data) => {
   if (fin_data.error) {
   res.json({ err: 'Fini düzgün daxil edin!1' });
   } else {
@@ -137,9 +134,8 @@ router.post('/miqration', ipLimit('miqration'), (req, res) => {
   }
   });
   } else {
-  db.fin_data
-  .update(newData, { where: { fin: pin } })
-  .then((fin_data) => {
+  db.fin_data.update(newData, 
+  {where: { fin: pin } }).then((fin_data) => {
   if (fin_data.error) {
   res.json({ err: 'Fini düzgün daxil edin!2' });
   } else {
@@ -604,8 +600,7 @@ router.post('/utis', authenticate, (req, res) => {
   (req.currentUser.fin || '').toLowerCase() ||
   !isOlympiad
   )
-  db.children
-  .findOne({
+  db.children.findOne({
   attributes: ['fin'],
   where: {
   deleted: 0,
@@ -614,17 +609,14 @@ router.post('/utis', authenticate, (req, res) => {
   })
   .then((chf) => {
   if (!chf || isOlympiad) {
-  db.fin_data
-  .findOne({
+  db.fin_data.findOne({
   attributes: ['fin'],
   where: {
   fin: !fin ? 'UC' + stud_utis_code : fin,
   },
-  })
-  .then((check_fin) => {
+  }).then((check_fin) => {
   if (!check_fin) {
-  db.fin_data
-  .create({
+  db.fin_data.create({
   fin: !fin ? 'UC' + stud_utis_code : fin,
   first_name: name,
   last_name: surname,
@@ -640,8 +632,7 @@ router.post('/utis', authenticate, (req, res) => {
   district: '',
   born_country: birthcountry,
   address,
-  })
-  .then((fin_data) => {
+  }).then((fin_data) => {
   if (fin_data.error) {
   res.json({
   success: false,
@@ -670,8 +661,7 @@ router.post('/utis', authenticate, (req, res) => {
   }
   });
   } else {
-  db.fin_data
-  .update(
+  db.fin_data.update(
   {
   first_name: name,
   last_name: surname,
@@ -697,8 +687,7 @@ router.post('/utis', authenticate, (req, res) => {
   : fin,
   },
   }
-  )
-  .then((fin_data) => {
+  ).then((fin_data) => {
   if (fin_data.error) {
   res.json({
   success: false,
@@ -872,9 +861,8 @@ router.post('/dim', authenticate, (req, res) => {
   ).tnatehsilOrtaMektebInfo || []
   ).TnatehsilOrtaMektebInfo || [])[0];
   if (dimData) {
-  db.specialty_subjects
-  .findAll({ where: { sinif, deleted: 0 } })
-  .then((subjectlist) => {
+  db.specialty_subjects.findAll({ 
+  where: { sinif, deleted: 0 } }).then((subjectlist) => {
   let subjects = [];
   let tedirs_dili = '';
   let xarici_dil = '';
@@ -967,9 +955,8 @@ router.post('/dim', authenticate, (req, res) => {
   res.json({ subjects, exam_subjects });
   });
   } else {
-  db.specialty_subjects
-  .findAll({ where: { sinif, deleted: 0 } })
-  .then((subjectlist) => {
+  db.specialty_subjects.findAll({ 
+  where:{sinif, deleted: 0}}).then((subjectlist) => {
   let subjects = [];
   let tedirs_dili = dil;
 
@@ -1242,16 +1229,14 @@ const midRequest = (url, data, callback, retry = true) => {
   timeout: process.env.TIMEOUT || 8000,
   url: `${process.env.MID_HOST}${url}`,
   };
-  axios(options)
-  .then((result) => {
+  axios(options).then((result) => {
   if (((result || {}).data || {}).status) {
   callback((result || {}).data || {});
   } else {
   if (retry) midRequest(url, data, callback, false);
   else callback(false);
   }
-  })
-  .catch((e) => {
+  }).catch((e) => {
   console.log('midRequest error: ', e);
   if (Object.keys(e).length > 0) {
   if (retry) midRequest(url, data, callback, false);
@@ -1272,16 +1257,14 @@ const midRequestWithToken = (url, data, token, callback, retry = true) => {
   timeout: process.env.TIMEOUT || 8000,
   url: `${process.env.MID_HOST}${url}`,
   };
-  axios(options)
-  .then((result) => {
+  axios(options).then((result) => {
   if (((result || {}).data || {}).status) {
   callback((result || {}).data || {});
   } else {
   if (retry) midRequest(url, data, callback, false);
   else callback(false);
   }
-  })
-  .catch((e) => {
+  }).catch((e) => {
   console.log('midRequest error: ', e);
   if (Object.keys(e).length > 0) {
   if (retry) midRequest(url, data, callback, false);
@@ -1304,15 +1287,13 @@ const midLogin = (callback) => {
   url: `${process.env.MID_HOST}/auth/login`,
   };
 
-  axios(options)
-  .then((login_result) => {
+  axios(options).then((login_result) => {
   if (((login_result || {}).data || {}).access_token) {
   callback(((login_result || {}).data || {}).access_token);
   } else {
   callback(false);
   }
-  })
-  .catch((e) => {
+  }).catch((e) => {
   console.log('midLogin error: ', e);
   if (Object.keys(e).length > 0) callback(false);
   });
@@ -1330,21 +1311,18 @@ const updateChild = (pin, birth_date, utisCode, user_id) => {
   },
   (err, client) => {
   if (client) {
-  db.utis_schools
-  .findAll({ order: [['name', 'ASC']] })
-  .then((umumtehsil_schools) => {
-  db.districts
-  .findAll({ where: { deleted: 0 }, order: [['name', 'ASC']] })
-  .then((regions) => {
-  db.children
-  .findOne({
+  db.utis_schools.findAll({ 
+  order: [['name', 'ASC']] }).then((umumtehsil_schools) => {
+  db.districts.findAll({ 
+  where: { deleted: 0 }, 
+  order: [['name', 'ASC']]}).then((regions) => {
+  db.children.findOne({
   attributes: ['id'],
   where: {
   deleted: 0,
   fin: pin || 'UC' + stud_utis_code,
   },
-  })
-  .then((chf) => {
+  }).then((chf) => {
   client.getStudentInfoByParam(
   !!utisCode
   ? { utisCode: Number(utisCode) }
@@ -1389,44 +1367,38 @@ const updateChild = (pin, birth_date, utisCode, user_id) => {
   utis_code: stud_utis_code,
   };
   if (chf) {
-  db.children
-  .update(
+  db.children.update(
   {
   ...newData,
   type: pin ? 2 : 1,
   edu_level: 2,
   },
   { where: { id: chf.id } }
-  )
-  .then(() => {
+  ).then(() => {
   resolve(true);
   });
   } else {
-  db.children
-  .create({
+  db.children.create({
   ...newData,
   user_id,
   type: pin ? 2 : 1,
   edu_level: 2,
   parent_type: 'Valideyn',
   fin: fin || pin,
-  })
-  .then(() => {
+  }).then(() => {
   resolve(true);
   });
   }
   } else if (chf) {
   resolve(true);
   } else if (!iamasResponse.err) {
-  db.children
-  .create({
+  db.children.create({
   user_id,
   type: 1,
   edu_level: 3,
   parent_type: 'Valideyn',
   fin: pin,
-  })
-  .then(() => {
+  }).then(() => {
   resolve(true);
   });
   } else {
@@ -1455,9 +1427,9 @@ const updateFinData = (pin, birthdate, calback) => {
   (result) => {
   const data = _.find(result.data || [], 'active');
   if (data) {
-  db.fin_data
-  .findOne({ attributes: ['fin'], where: { fin: pin } })
-  .then((check_fin) => {
+  db.fin_data.findOne({ 
+  attributes: ['fin'], 
+  where: { fin: pin } }).then((check_fin) => {
   const image = (
   _.find((data.personAz || {}).images || [], [
   'imageName',
@@ -1531,9 +1503,8 @@ const updateFinData = (pin, birthdate, calback) => {
   }
   });
   } else {
-  db.fin_data
-  .update(newData, { where: { fin: pin } })
-  .then((fin_data) => {
+  db.fin_data.update(newData, 
+  { where: { fin: pin } }).then((fin_data) => {
   if (fin_data.error) {
   calback({ err: 'Fini düzgün daxil edin!' });
   } else {

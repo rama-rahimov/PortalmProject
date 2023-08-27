@@ -35,12 +35,12 @@ router.get('/payment/debt/:id', authenticate, (req, res) => {
     method: 'GET',
     url: `${process.env.ATIS_HOST}/api/restoration-academic-debt/student/${id}`,
     headers: {
-        Authorization: 'Bearer ' + token
+    Authorization: 'Bearer ' + token
     }}).then(post_result => {
     res.json(post_result.data.amount);
     }).catch(e => {
     if (e.response) {
-        console.log(e.response.data);
+    console.log(e.response.data);
     } else {
     console.log(e);
     }
@@ -49,7 +49,8 @@ router.get('/payment/debt/:id', authenticate, (req, res) => {
     })
     } else {
     res.json({ error: 'token error' })
-    }}) });
+    }}) 
+});
 
 
 
@@ -75,32 +76,32 @@ router.post('/payment/sendPaymentChekScan', authenticate, (req, res) => {
     const options = {
     method: 'POST',
     headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + token
     },
     timeout: process.env.TIMEOUT || 8000,
     data: {
-        check_scan: paymentChekScan, global_id: id
+    check_scan: paymentChekScan, global_id: id
     },
     url: `${process.env.ATIS_HOST}/api/restoration-academic-debt/payment/receipt`
     };
     axios(options).then((r) => {
-        // console.log({ r })
-        res.json(true)
+    // console.log({ r })
+    res.json(true)
     }).catch(e => {
     if (e.response) {
     console.log(e.response.data);
     } else {
-        console.log(e);
+    console.log(e);
     }
     if (Object.keys(e).length > 0)
-        res.json(false)
+    res.json(false)
     })
     } else {
     console.log(false)
     res.json(false)
     }
-    }) });
+}) });
 
 /**
  * @api {post} /debt/payment/get_url payment get_url

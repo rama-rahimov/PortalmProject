@@ -70,19 +70,18 @@ const ipLimit = (api) => (req, res, next) => {
 const global_authenticate = (req, res, next) => {
   const header = req.headers.authorization;
   let token;
-
   if (header) token = header.split(" ")[1];
   if (token) {
-    jwt.verify(token, process.env.JWT_GLOBAL_SECRET, (err, decoded) => {
-      if (err || decoded.secret !== process.env.JWT_GLOBAL_SECRET2) {
-        res.status(401).json({ errors: { message: "Non correct token" } });
-      } else {
-        req.currentGlobalUser = decoded ;
-        next();
-      }
-    });
+  jwt.verify(token, process.env.JWT_GLOBAL_SECRET, (err, decoded) => {
+  if (err || decoded.secret !== process.env.JWT_GLOBAL_SECRET2) {
+  res.status(401).json({ errors: { message: "Non correct token" } });
   } else {
-    res.status(401).json({ errors: { message: "No token" } });
+  req.currentGlobalUser = decoded ;
+  next();
+  }
+  });
+  } else {
+  res.status(401).json({ errors: { message: "No token" } });
   }
 };
 
@@ -122,4 +121,5 @@ const toAuthJSON = user => {
   };
 };
 
-module.exports = {toAuthJSON, generateJWT, setConfirmationToken, setPassword, isValidPassword, global_authenticate, ipLimit, authenticate, checkurl} ;
+module.exports = {toAuthJSON, generateJWT, setConfirmationToken, setPassword, isValidPassword, global_authenticate, 
+ipLimit, authenticate, checkurl} ;

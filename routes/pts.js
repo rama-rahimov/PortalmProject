@@ -49,8 +49,11 @@ router.use("/use_datas_for_qebul", authenticate, async (req, res) => {
   try {
   if(req.method == 'GET'){
   if(req.query.u){
-  axios.get(process.env.PTS_QEBUL_URL+req.query.u, { headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
-  'authorization': process.env.PTS_QEBUL_TOKEN }, httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(({data}) => res.json(data)).catch(() => {
+  axios.get(process.env.PTS_QEBUL_URL+req.query.u, { 
+  headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
+  'authorization': process.env.PTS_QEBUL_TOKEN }, 
+  httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(
+  ({data}) => res.json(data)).catch(() => {
   res.json([]);
   })
   } else {
@@ -59,23 +62,32 @@ router.use("/use_datas_for_qebul", authenticate, async (req, res) => {
   } else if(req.method == 'POST'){
   const { u, p } = req.body;
   if(u && Object.keys(p).length > 0){
-  axios.post(process.env.PTS_QEBUL_URL+u, p, { headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
-  'authorization': process.env.PTS_QEBUL_TOKEN }, httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(({data}) => res.json(data));
+  axios.post(process.env.PTS_QEBUL_URL+u, p, 
+  { headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
+  'authorization': process.env.PTS_QEBUL_TOKEN }, 
+  httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(
+  ({data}) => res.json(data));
   } else {
   res.json(null);
   }
   } else if(req.method == 'PUT'){
   const { u, p } = req.body;
   if(u && Object.keys(p).length > 0){
-  axios.put(process.env.PTS_QEBUL_URL+u, p, { headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
-  'authorization': process.env.PTS_QEBUL_TOKEN }, httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(({data}) => res.json(data));
+  axios.put(process.env.PTS_QEBUL_URL+u, p, { 
+  headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
+  'authorization': process.env.PTS_QEBUL_TOKEN }, 
+  httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(
+  ({data}) => res.json(data));
   } else {
   res.json(null);
   }
   } else if(req.method == 'DELETE'){
   if(req.query.u){
-  axios.delete(process.env.PTS_QEBUL_URL+req.query.u, { headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
-  'authorization': process.env.PTS_QEBUL_TOKEN }, httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(({data}) => res.json(data));
+  axios.delete(process.env.PTS_QEBUL_URL+req.query.u, { 
+  headers: { 'authorapi': process.env.PTS_QEBUL_APIKEY, 
+  'authorization': process.env.PTS_QEBUL_TOKEN }, 
+  httpsAgent: new https.Agent({ rejectUnauthorized: false }) }).then(
+  ({data}) => res.json(data));
   } else {
   res.json(null);
   }

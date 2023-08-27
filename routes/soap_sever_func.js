@@ -1,47 +1,47 @@
 const mySoapServices = {
     PaymentServiceWS2: {
-        PaymentServiceWS2PortBinding: {
-        GetAccountAndInvoiceInfo: function (args) {
-        console.log('args', args)
-        return GetAccountAndInvoiceInfoResponse(args);
-        },
+    PaymentServiceWS2PortBinding: {
+    GetAccountAndInvoiceInfo: function (args) {
+    console.log('args', args)
+    return GetAccountAndInvoiceInfoResponse(args);
+    },
 
-        // This is how to define an asynchronous function with a callback.
-        GetAccountandInvoiceInfoAsync: function (args, callback) {
-        // do some work
-        console.log('args', args)
-        callback(GetAccountAndInvoiceInfoResponse(args));
-        },
+    // This is how to define an asynchronous function with a callback.
+    GetAccountandInvoiceInfoAsync: function (args, callback) {
+    // do some work
+    console.log('args', args)
+    callback(GetAccountAndInvoiceInfoResponse(args));
+    },
 
-        // This is how to define an asynchronous function with a Promise.
-        GetAccountandInvoiceInfoPromise: function (args) {
-        console.log('args', args)
-        return new Promise((resolve) => {
-        // do some work
-        resolve(GetAccountAndInvoiceInfoResponse(args));
-        });
-        },
-        NotifyAboutPayment: function (args) {
-        console.log('args', args)
-        return {};
-        },
+    // This is how to define an asynchronous function with a Promise.
+    GetAccountandInvoiceInfoPromise: function (args) {
+    console.log('args', args)
+    return new Promise((resolve) => {
+    // do some work
+    resolve(GetAccountAndInvoiceInfoResponse(args));
+    });
+    },
+    NotifyAboutPayment: function (args) {
+    console.log('args', args)
+    return {};
+    },
 
-        // This is how to define an asynchronous function with a callback.
-        NotifyAboutPaymentAsync: function (args, callback) {
-        // do some work
-        console.log('args', args)
-        callback({});
-        },
+    // This is how to define an asynchronous function with a callback.
+    NotifyAboutPaymentAsync: function (args, callback) {
+    // do some work
+    console.log('args', args)
+    callback({});
+    },
 
-        // This is how to define an asynchronous function with a Promise.
-        NotifyAboutPaymentPromise: function (args) {
-        console.log('args', args)
-        return new Promise((resolve) => {
-        // do some work
-        resolve({});
-        });
-        }
-        }
+    // This is how to define an asynchronous function with a Promise.
+    NotifyAboutPaymentPromise: function (args) {
+    console.log('args', args)
+    return new Promise((resolve) => {
+    // do some work
+    resolve({});
+    });
+    }
+    }
     }
 };
 
