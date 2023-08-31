@@ -174,7 +174,7 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
         DAY`) > db.sequelize.fn("NOW"))), {status:0}]}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
         break;
     case 2:  
-        check_sql =  db.e_documents_apply.findAll({
+        check_sql = db.e_documents_apply.findAll({
         where:{[Op.and]:[{user_id:req.currentUser.id}, 
         {document_purpose}, {edu_level}, {direction}, {entranceYear}, 
         db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
@@ -182,14 +182,14 @@ router.post('/getReferenceData', authenticate, async (req, res) => {
         {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ; 
         break;
     case 3:  
-        check_sql =  db.e_documents_apply.findAll({where:{[Op.and]:[{user_id:req.currentUser.id}, 
+        check_sql = db.e_documents_apply.findAll({where:{[Op.and]:[{user_id:req.currentUser.id}, 
         {document_purpose}, {edu_level}, {direction}, {entranceYear:{[Op.is]:null}}, 
         db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
         db.sequelize.literal(`INTERVAL 30 DAY`) > db.sequelize.fn("NOW"))), 
         {status:{[Op.ne]:0}}, {id: id ? {[Op.ne]:id} : ''}]}}) ;
         break;
     case 4:  
-        check_sql =   db.e_documents_apply.findAll({where:{[Op.and]:[{user_id:req.currentUser.id}, 
+        check_sql = db.e_documents_apply.findAll({where:{[Op.and]:[{user_id:req.currentUser.id}, 
         {document_purpose}, {edu_level:{[Op.is]:null}}, {direction}, {entranceYear}, 
         db.sequelize.where(db.sequelize.fn("ADDDATE", "update_date" , 
         db.sequelize.literal(`INTERVAL 30 DAY`) > db.sequelize.fn("NOW"))), 
@@ -468,7 +468,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
     new Date().toISOString().slice(0, 19).replace('T', ' ')},
     {where:{id}}).then(e_reference_apply_update => {
     if (e_reference_apply_update.error) {
-                            callback({ error: e_reference_apply_update.error });
+    callback({ error: e_reference_apply_update.error });
     } else {
     callback({ id });
     }
@@ -497,8 +497,6 @@ function saveApply(status, step, dataForm, user_id, callback) {
     });
     }
     }
-
-
 
 function sendData(status, dataForm, id, callback) {
     if (status) {
@@ -614,7 +612,7 @@ const sendRequest = (data, func, callback) => {
     callback({ err, result: null });
     }
     });
-    }
+}
 
 const getAtisData = (data, callback) => {
     //const fins = ['691GQYW', '661XWP2', '', '61FYRD9'];
@@ -639,7 +637,7 @@ const getAtisData = (data, callback) => {
     callback(false);
     }
     });
-    }
+}
 
 const getExamData = (data, callback) => {
     axios.post(`${process.env.EXAM_HOST}/api/exam_points`, data/*{
@@ -656,7 +654,7 @@ const getExamData = (data, callback) => {
     callback(false);
     }
     });
-    }
+}
 
 const getPTSData = (data, callback) => {
 
@@ -673,7 +671,7 @@ const getPTSData = (data, callback) => {
     callback(false);
     }
     });
-    }
+}
 
 const filePath = (f) => {
     var file = f.replace('/getfile/', '').split('~');
@@ -724,7 +722,7 @@ const atisLogin = (callback) => {
     callback(false);
     }
     });
-    }
+}
 
 
 
@@ -910,7 +908,7 @@ function createReferencePdf(id, callback) {
     callback(false);
     }
     });
-    };
+};
 
 
 function createATISReferencePdf(id, callback) {
@@ -999,7 +997,7 @@ function createATISReferencePdf(id, callback) {
     callback(false);
     }
     });
-    };
+};
 
 
 
@@ -1089,7 +1087,7 @@ function createPTSReferencePdf(id, callback) {
     callback(false);
     }
     });
-    };
+};
 
 
 function createExamReferencePdf(id, callback) {
@@ -1172,18 +1170,18 @@ function createExamReferencePdf(id, callback) {
     callback(false);
     }
     });
-    };
+};
 
 
 function genrateHash(docNo) {
-return Base64.stringify(hmacSHA512(docNo, process.env.DiplomPrivateKey));
-//return crypto.createHmac('sha256', process.env.DiplomPrivateKey).update(genrateDocNo(id)).digest("base64");
-}
+    return Base64.stringify(hmacSHA512(docNo, process.env.DiplomPrivateKey));
+    //return crypto.createHmac('sha256', process.env.DiplomPrivateKey).update(genrateDocNo(id)).digest("base64");
+    }
 
-function genrationNumber(s, callBack) {
-querySync(`SELECT getRandomDocNo(?) AS docNo`, [s]).then((result) => {
-callBack(result.docNo);
-});
+    function genrationNumber(s, callBack) {
+    querySync(`SELECT getRandomDocNo(?) AS docNo`, [s]).then((result) => {
+    callBack(result.docNo);
+    });
 }
 
 

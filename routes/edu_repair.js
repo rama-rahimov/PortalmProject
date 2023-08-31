@@ -46,7 +46,7 @@ router.post('/', global_authenticate, (req, res) => {
     });
 
     res.json({ succes: true, message: 'Məlumat uğurla dəyişdirdi!' });
-    });
+});
 
 /**
  * @api {get} /edu_repair/last 
@@ -80,7 +80,7 @@ router.get('/last', authenticate, (req, res) => {
     res.json({});
     }
     });
-    });
+});
 
 /**
  * @api {get} /edu_repair/pts_all_list pts all list
@@ -105,7 +105,7 @@ router.get('/pts_all_list', authenticate, (req, res) => {
     headers: { 'authorization': 'Bearer ' + process.env.VACANCIES_TOKEN } }).then(body => {
     res.json(body ? JSON.parse(body) : null);
     }).catch(err => console.log(err.message));
-    }) ;
+}) ;
 
 /**
  * @api {get} /edu_repair/get_user_restored_data get user restored data
@@ -130,7 +130,7 @@ router.post('/get_user_restored_data', authenticate, (req, res) => {
     form: {}, headers: { 'authorization': 'Bearer ' + process.env.VACANCIES_TOKEN } }).then(body => {
     res.json(body ? JSON.parse(body) : null);
     }).catch(err => console.log(err));
-    });
+});
 
 /**
  * @api {post} /edu_repair/save/ save
@@ -257,7 +257,7 @@ router.post('/save', authenticate, (req, res) => {
     res.json(result);
     })();
     });
-    });
+});
 
 
 module.exports = router;
@@ -307,4 +307,4 @@ function saveApply(status, step, dataForm, user_id, callback) {
     }
     });
     }
-    }
+}

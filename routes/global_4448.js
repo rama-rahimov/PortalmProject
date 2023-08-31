@@ -70,7 +70,7 @@ router.get('/secret_token/:type', (req, res) => {
     },
     process.env.JWT_GLOBAL_SECRET
     ));
-    });
+});
 
 
 
@@ -251,8 +251,10 @@ router.post('/mig', /*global_authenticate,*/(req, res) => {
     res.status(401).json({ errors: { message: "Non correct token1" } });
     }*/
     }
-    });
+});
+
 // order by sa.id desc
+
 router.post('/student_info', global_authenticate, (req, res) => {
     const { id, fin } = req.body;
     if (req.currentGlobalUser.type == 'student_apply') {
@@ -285,7 +287,7 @@ router.post('/student_info', global_authenticate, (req, res) => {
     } else {
     res.json({});
     }
-    });
+});
 
 router.post('/student/apply', global_authenticate, (req, res) => {
     const { isDoctoral, globalId, status, message, file, 
@@ -334,7 +336,7 @@ router.post('/student/apply', global_authenticate, (req, res) => {
     } else {
     res.status(401).json({ errors: { message: "Non correct token" } });
     }
-    });
+});
 
 
 router.post('/debt/changeStatus', global_authenticate, (req, res) => {
@@ -365,7 +367,7 @@ router.post('/debt/changeStatus', global_authenticate, (req, res) => {
     } else {
     res.status(401).json({ errors: { message: "Non correct token" } });
     }
-    });
+});
 
 // appealed_out_of_schools da tendency_id ve status columnlari yoxtdur
 router.post('/out_of_schools/statusChange', global_authenticate, (req, res) => {
@@ -392,7 +394,7 @@ router.post('/out_of_schools/statusChange', global_authenticate, (req, res) => {
     } else {
     res.status(401).json({ errors: { message: "Non correct token" } });
     }
-    });
+});
 
 router.post('/reference', global_authenticate, (req, res) => {
     if (req.currentGlobalUser.type == 'reference') {
@@ -428,7 +430,7 @@ router.post('/reference', global_authenticate, (req, res) => {
     } else {
     res.status(401).json({ error: "Non correct token", success: false });
     }
-    });
+});
 
 
 router.post('/olympiad_apply', global_authenticate, (req, res) => {
@@ -452,7 +454,7 @@ router.post('/olympiad_apply', global_authenticate, (req, res) => {
     } else {
     res.status(401).json({ error: "Non correct token" });
     }
-    });
+});
 
 // router.post('/edu_repair', global_authenticate, (req, res) => {
 //     // if (req.currentGlobalUser.type == 'edu_repair') {
@@ -490,7 +492,7 @@ router.post('/edu_repair', global_authenticate, (req, res) => {
     });
 
     res.json({ succes: true, message: 'Məlumat uğurla dəyişdirdi!' });
-    });
+});
 
 router.post('/course', /* global_authenticate, */(req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -521,7 +523,7 @@ router.post('/course', /* global_authenticate, */(req, res) => {
     /* } else {
          res.status(401).json({ errors: { message: "Non correct token1" } });
      } */
-    });
+});
 
 
 // rahman add - 12.08.2021
@@ -540,7 +542,7 @@ router.post("/pts_new_status_from_qebul", global_authenticate, (req, res) => {
     db.notifications.create({ service: 'pts', fin: id, title, description }).then(() => {
     res.json({ success: true });
     });
-    });
+});
 
 
 router.post('/change/applicant/status', global_authenticate, (req, res) => {
@@ -564,7 +566,7 @@ router.post('/change/applicant/status', global_authenticate, (req, res) => {
     })
     }
     });
-    });
+});
 
 router.get('/opencourse/applications/', global_authenticate, async (req, res) => {
     const { offset, limit } = req.query;
@@ -626,7 +628,7 @@ router.get('/opencourse/applications/', global_authenticate, async (req, res) =>
     .then(data => {
     res.json((data || []).map(d => ({ ...d, id: d.ap_id })));  // bu ishlemir amma sadece data qaytarsaq ishleyecek
     });
-    });
+});
 
 router.get('/opencourse/applications/:id', global_authenticate, async (req, res, next) => {
     const { offset, limit } = req.query;
@@ -684,7 +686,7 @@ router.get('/opencourse/applications/:id', global_authenticate, async (req, res,
     sql.then(data => {
     res.json((data || []).map(d => ({ ...d, id: d.ap_id })));   // bu ishlemir amma sadece data qaytarsaq ishleyecek
     });
-    });
+});
 
 router.get('/applicant/data/:user_id/:ap_id', global_authenticate, (req, res) => {
     let { user_id, ap_id } = req.params;  
@@ -723,7 +725,7 @@ router.get('/apply/by/id/:id', global_authenticate, (req, res) => {
     res.json({ success: false });
     }
     });
-    });
+});
 
 module.exports = router;
 
