@@ -1,5 +1,5 @@
 const express = require("express") ;
-const axios = require("axios") ;
+const axios = require("axios").default ;
 const querystring = require("querystring") ;
 const _ = require("lodash") ;
 const fs = require("fs") ;
@@ -54,12 +54,11 @@ router.get('/test/:fin/:edu_level/:entranceYear/:direction', (req, res) => {
     edu_duration: data.educationDuration,
     edu_institution: data.institution,
     })
-
     } else {
     res.json({});
     }
     })
-    });
+});
 
 
 router.get('/statistika/:p', async (req, res) => {
@@ -443,8 +442,8 @@ module.exports = router;
 
 function saveApply(status, step, dataForm, user_id, callback) {
     const { id, country, country_code, phone, first_name, last_name,
-    father_name, birth_date, address, actual_address, citizenship, email,
-    is_address_current, fin, direction, edu_level, document_purpose, 
+    father_name, birth_date, address, actual_address, citizenship, 
+    email, is_address_current, fin, direction, edu_level, document_purpose, 
     programs_type, reference_provided, government_agency, entranceYear,
     program, edu_institution, level_of_edu, specialty, edu_duration, actual_region } = dataForm;
 
@@ -479,7 +478,6 @@ function saveApply(status, step, dataForm, user_id, callback) {
     }
     });
     } else {
-        
     db.e_documents_apply.create({user_id, status, step, 
     country, country_code, phone, first_name, last_name, 
     father_name, birth_date, address, actual_address, 
@@ -496,7 +494,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
     }
     });
     }
-    }
+}
 
 function sendData(status, dataForm, id, callback) {
     if (status) {
@@ -560,7 +558,8 @@ function sendData(status, dataForm, id, callback) {
     else { 
     db.notifications.destroy({where:{service:"reference", fin:id, title:0}}).then(() => {
     db.notifications.create({service: 'reference', fin: id, title: 0, 
-    description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', extra_data: ""}).then(() => {
+    description: 'Siz müraciətinizi tamamlamamısınız. Müraciətinizin qeydə alınması  üçün zəhmət olmasa müraciətinizi tamamlayın', 
+    extra_data: ""}).then(() => {
     callback(false);
     }
     )});
@@ -573,7 +572,7 @@ function sendData(status, dataForm, id, callback) {
     }
     )});
     }
-    }
+}
 
 const updateStatus = (id, docNo, callback, status = 3) => {
     db.notifications.destroy({where:{service:"reference", fin:id, title:(docNo ? 1 : 0)}}).then(() => {
@@ -589,7 +588,7 @@ const updateStatus = (id, docNo, callback, status = 3) => {
     }
     }
     )});
-    }
+}
 
 const sendRequest = (data, func, callback) => {
     soap.createClient("http://127.0.0.1/getfile/wsdl~xreference.wsdl", {
@@ -912,7 +911,9 @@ function createReferencePdf(id, callback) {
 
 
 function createATISReferencePdf(id, callback) {
-    db.e_documents_apply.findOne({where:{id}, include:[{model:db.government_agencies, required:false, attributes:[['r_name', 'ga_name']]}]}).then(result => {
+    db.e_documents_apply.findOne({where:{id}, 
+    include:[{model:db.government_agencies, required:false, 
+    attributes:[['r_name', 'ga_name']]}]}).then(result => {
     if (result) {
     const reference_provided = Number(result.reference_provided) === 2 ? result.ga_name : "TƏLƏB OLUNAN YERƏ TƏQDİM EDİLMƏSİ ÜÇÜN VERİLİR.";
     getAtisData({

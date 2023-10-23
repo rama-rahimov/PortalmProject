@@ -1,7 +1,7 @@
 const express = require("express") ;
 const { authenticate } = require("../middlewares/authenticate.js") ;
 const moment = require("moment") ;
-const axios = require('axios') ;
+const axios = require('axios').default ;
 const { Op } = require("sequelize");
 const db = require('../models');
 const { Sequelize } = require("sequelize");
@@ -57,11 +57,11 @@ router.get('/all', authenticate, (req, res) => {
 
 
 router.get('/teaching_courses', authenticate, (req, res) => {
-    axios.get(process.env.VACANCIES_HOST +':'+ process.env.VACANCIES_PORT + "/api/cadet/teaching_courses_all_statusopen/?&teaching_year=32", {
-    headers: { authorization: "Bearer " + process.env.VACANCIES_TOKEN } }).then(({ data }) => { res.json(data);
-    }).catch((error) => {
-    console.log(error)
-    res.json({ success: false }) }) 
+  axios.get(process.env.VACANCIES_HOST +':'+ process.env.VACANCIES_PORT + "/api/cadet/teaching_courses_all_statusopen/?&teaching_year=32", {
+  headers: { authorization: "Bearer " + process.env.VACANCIES_TOKEN } }).then(({ data }) => { res.json(data);
+  }).catch((error) => {
+  console.log(error)
+  res.json({ success: false }) }) 
 });
 
 /**
@@ -356,7 +356,7 @@ router.post('/save', authenticate, (req, res) => {
     if (check) {
     //delete                         
     db.appealed_courses.findAll({where:{course_appeals_id:result.id}}).then((ars) => {
-    let arsc = 0;  
+    let arsc = 0 ;  
     (ars || []).forEach(ar => {
     db.notifications.destroy({where:{service:'course_appeals', fin:ar.id, title:Number(status)}}).then((r) => {
     db.notifications.create({service: 'course_appeals',
@@ -419,7 +419,7 @@ function saveApply(status, step, dataForm, user_id, callback) {
     militaryService,
     social_scan,
     social_status
-    } = dataForm;
+    } = dataForm ;
 
     db.course_appeals.findOne({ attributes:['id', 'user_id'], 
     where:{id} }).then(course_appeals => {

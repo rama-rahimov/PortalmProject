@@ -67,6 +67,7 @@ const router = express.Router();
  *       "errors":{ "global": "Şifrə düzgün deyil" }
  *     }
  */
+
 router.post("/", (req, res) => {
   const isEng = (req.headers.language || "") === "en" ;
   const { email, password } = req.body; 
@@ -176,9 +177,9 @@ router.post("/asan_login", (req, res) => {
     })();
     } else
     res.status(400).json({ errors: { global: "Xəta baş verdi." } });
-    });
+  });
 
-    });
+});
 
 const saveFinData = (fin, finData, calcack) => {  
   db.fin_data.findOne({attributes:['fin'], where:{fin}}).then(check_fin => {
@@ -202,7 +203,7 @@ const saveFinData = (fin, finData, calcack) => {
   });
   }
   });
-  }
+}
 
 
 const getSoapFindata = (pin) => {
@@ -239,6 +240,6 @@ const getSoapFindata = (pin) => {
   }
   });
   });
-  }
+}
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const express = require('express') ;
-const axios = require('axios') ;
+const axios = require('axios').default ;
 const https = require('https') ;
 const querystring = require('querystring') ;
 const db = require('../models');
@@ -7,7 +7,7 @@ const { authenticate } = require('../middlewares/authenticate.js') ;
 const { saveFile, request } = require('../middlewares/helper.js') ;
 const { smsSend } = require('../middlewares/sms.js') ;
 require('dotenv').config(); 
-const { Op, Sequelize } = require('sequelize') ;
+const { Op, Sequelize, QueryTypes } = require('sequelize') ;
 
 const router = express.Router();
 
@@ -1230,8 +1230,7 @@ router.post('/service_left_bar', authenticate, (req, res) => {
  *
  */
 router.get('/vacancies', authenticate, (req, res) => {
-  axios
-  .get(
+  axios.get(
   `${process.env.VACANCIES_HOST}:${
   process.env.VACANCIES_PORT
   }/api/vacancy/plans?teaching_year=${new Date().getFullYear() - 1}`,
@@ -1239,8 +1238,10 @@ router.get('/vacancies', authenticate, (req, res) => {
   headers: { authorization: 'Bearer ' + process.env.VACANCIES_TOKEN },
   httpsAgent: new https.Agent({ rejectUnauthorized: false }),
   }
-  )
-  .then(({ data }) => res.json(data));
+  ).then(({ data }) => res.json(data)).catch(err => {
+  res.json(err);
+  console.log(err);
+  });
 });
 
 /**
@@ -1579,12 +1580,14 @@ const atisTablesKeys = {
   foreigner_sub_specialities: 'childSpecialties',
 };
 
+
+
 router.get('/:table', authenticate, (req, res) => {
   const { table } = req.params;
   const langKey = (req.headers.language || '') === 'en' ? 'nameEn' : 'name';
   if (table) {
-  if (tables.includes(table)) {
-  db.table.findAll({ order: [['id', 'ASC']] }).then(
+  if (tables.includes(table)) {  
+  db.sequelize.query(`SELECT * FROM ${table} ORDER BY 'id' 'ASC'`,{type: QueryTypes.SELECT, replacements:[]}).then(
   (result) => res.json(result.map((r) => ({ ...r, name: r[langKey] })))
   );
   } else if (atisTables.includes(table)) {

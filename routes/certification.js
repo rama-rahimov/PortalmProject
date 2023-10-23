@@ -1,7 +1,6 @@
 const express = require("express") ;
-const axios = require("axios") ;
+const axios = require("axios").default ;
 const { authenticate } = require("../middlewares/authenticate.js") ;
-
 const router = express.Router();
 
 router.post('/exam_points', authenticate, (req, res) => {
@@ -56,7 +55,7 @@ router.get('/job_data', authenticate, (req, res) => {
     if (Object.keys(e).length > 0)
     res.json({ error: 'api error' });
     });
-    });
+});
 
 
 router.get('/data', authenticate, (req, res) => {
@@ -83,7 +82,7 @@ router.get('/data', authenticate, (req, res) => {
     if (Object.keys(e).length > 0)
     res.json({ error: 'api error' });
     });
-    });
+});
 
 router.get('/exam_data', authenticate, (req, res) => {
     const fin = req.currentUser.fin;
@@ -109,5 +108,6 @@ router.get('/exam_data', authenticate, (req, res) => {
     if (Object.keys(e).length > 0)
     res.json({ error: 'api error' });
     });
-    });
+});
+
 module.exports = router;

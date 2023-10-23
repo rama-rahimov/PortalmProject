@@ -178,7 +178,8 @@ router.post('/payment/get_url', authenticate, (req, res) => {
     res.json(false);
     })
     } else {
-    res.json(false); } }) });
+    res.json(false); } }) 
+});
 
 /**
  * @api {get} /debt/all all
@@ -205,14 +206,16 @@ router.get('/check', authenticate, (req, res) => {
     if (result && result.data) {
     showNewApply = (result.data.data || []).filter(e => !(appeals || []).map(a => a.invoice).includes(e.invoice)).length > 0;
     }
-    res.json({showNewApply, appeals }) }) }) });
+    res.json({showNewApply, appeals }) }) }) 
+});
 
 
 router.get('/all', authenticate, (req, res) => {
     db.debt.findAll({where:{user_id:req.currentUser.id}, 
     order:[['id', 'DESC']]}).then(apply => {
     res.json(apply);
-    }) });
+    }) 
+});
 
 
 router.get('/student/info', authenticate, (req, res) => {
@@ -244,7 +247,8 @@ router.get('/student/info', authenticate, (req, res) => {
     } else {
     res.json({});
     }
-    });});
+    });
+});
 
 router.get('/invoices', authenticate, (req, res) => {
     getAtisData(`${process.env.ATIS_HOST}/api/restoration-academic-debt/invoices?fin=${req.currentUser.fin}`, (result) => {
@@ -255,7 +259,8 @@ router.get('/invoices', authenticate, (req, res) => {
     });
     } else {
     res.json([]);
-    } }) });
+    } }) 
+});
 
 
 /**
@@ -347,23 +352,30 @@ router.post('/save', authenticate, (req, res) => {
 module.exports = router;
 
 function saveApply(status, step, dataForm, user_id, callback) {
-    const { fin, id, first_name, last_name, father_name, birth_date, address, is_address_current,
-    actual_address, country, phone, email, confirm_email, level_of_education,
-    education_level, education_institution, education_base, admission_year,
-    specialty, specialty_password, sub_specialty, specialization, citizenship,
-    sub_specialization, education_type, education_language,
-    invoice, subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, RecoveryType } = dataForm ;
+    const { fin, id, first_name, last_name, father_name, birth_date, 
+    address, is_address_current, actual_address, country, phone, 
+    email, confirm_email, level_of_education, education_level, 
+    education_institution, education_base, admission_year,
+    specialty, specialty_password, sub_specialty, specialization, 
+    citizenship, sub_specialization, education_type, education_language,
+    invoice, subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, 
+    RecoveryType } = dataForm ;
     if (fin) {  
-    db.debt.findOne({attributes:['id', 'user_id'], where:{id}}).then(debt => {
+    db.debt.findOne({attributes:['id', 'user_id'], 
+    where:{id}}).then(debt => {
     if (debt) {
     if (Number(user_id) !== Number(debt.user_id)) {
     callback({ error: 'Invalid user_id' });
     } else {
-    db.debt.update({status, step, first_name, last_name, father_name, birth_date, address, is_address_current, actual_address,
-    country, phone, email, confirm_email, level_of_education, education_level, education_institution,
-    education_base, admission_year, specialty, specialty_password, sub_specialty, specialization,
-    sub_specialization, education_type, education_language, fin, citizenship,
-    invoice, subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, RecoveryType}, {where:{ id: debt.id }}).then(debt_update => {
+    db.debt.update({status, step, first_name, last_name, 
+    father_name, birth_date, address, is_address_current, 
+    actual_address, country, phone, email, confirm_email, 
+    level_of_education, education_level, education_institution, 
+    education_base, admission_year, specialty, specialty_password,
+    sub_specialty, specialization, sub_specialization, 
+    education_type, education_language, fin, citizenship, invoice, 
+    subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, RecoveryType}, 
+    {where:{ id: debt.id }}).then(debt_update => {
     if (debt_update.error) {
     callback({ error: debt_update.error });
     } else {
@@ -372,17 +384,21 @@ function saveApply(status, step, dataForm, user_id, callback) {
     });
     }
     } else {
-    db.debt.create({user_id, status, step, first_name, last_name, father_name, birth_date, address, is_address_current, actual_address,
-    country, phone, email, confirm_email, level_of_education, education_level, education_institution,
-    education_base, admission_year, specialty, specialty_password, sub_specialty, specialization,
-    sub_specialization, education_type, education_language, fin, citizenship,
-    invoice, subjectName, remainDebt, invoiceCreateDate, invoiceEndDate, RecoveryType}).then(applyId => {
+    db.debt.create({user_id, status, step, first_name, last_name, 
+    father_name, birth_date, address, is_address_current, actual_address,
+    country, phone, email, confirm_email, level_of_education, 
+    education_level, education_institution, education_base, 
+    admission_year, specialty, specialty_password, sub_specialty, 
+    specialization, sub_specialization, education_type, education_language, 
+    fin, citizenship, invoice, subjectName, remainDebt, invoiceCreateDate, 
+    invoiceEndDate, RecoveryType}).then(applyId => {
     if (applyId.error) {
     callback({ error: applyId.error });
     } else {
     callback({ id: applyId })} })} });
     } else {
-    callback({ error: 'fin not found' }) }}
+    callback({ error: 'fin not found' }) 
+}}
 
 const atisLogin = (callback) => {
     const postData = querystring.stringify({
@@ -407,7 +423,8 @@ const atisLogin = (callback) => {
     }).catch(e => {
     //console.log('login error: ', e)
     if (Object.keys(e).length > 0)
-    callback(false)})}
+    callback(false)
+})}
 
 const sendRequest = (data, callback) => {
     atisLogin((token) => {
@@ -428,7 +445,8 @@ const sendRequest = (data, callback) => {
     if (Object.keys(e).length > 0)
     callback(false)})
     } else {
-    callback(false)}})};
+    callback(false)}
+})};
 
 const getAtisData = (url, callback,) => {
     atisLogin((token) => {
@@ -442,4 +460,5 @@ const getAtisData = (url, callback,) => {
     callback(false);
     }})
     } else {
-    callback(false)} })}
+    callback(false)} 
+})}
